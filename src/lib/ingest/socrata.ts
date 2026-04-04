@@ -24,9 +24,14 @@ export async function fetchSocrataPermits(
     params.set("$order", source.order);
   }
 
-  if (lastPullAt && source.date_field) {
-    const isoDate = new Date(lastPullAt).toISOString().split("T")[0];
-    params.set("$where", `${source.date_field} >= '${isoDate}'`);
+  if (source.date_field) {
+    if (lastPullAt) {
+      const isoDate = new Date(lastPullAt).toISOString().split("T")[0];
+      params.set("$where", `${source.date_field} IS NOT NULL AND ${source.date_field} >= '${isoDate}'`);
+    } else {
+      // First sync — just filter out nulls so we get real records
+      params.set("$where", `${source.date_field} IS NOT NULL`);
+    }
   }
 
   const url = `${source.endpoint}?${params.toString()}`;
@@ -160,7 +165,7 @@ export function normalizeSocrataPermit(
     permitId = `${permitId}-${ptype}-${desc}`.replace(/\s+/g, "_");
   }
 
-  if (!permitId || !address) return null;
+  if (!permitId || !address || address.toLowerCase().includes("no address")) return null;
 
   const permitType = str(raw, fm.permit_type);
   const description = str(raw, fm.description);
