@@ -1,25 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  hvac: "HVAC",
-  roofing: "Roofing",
-  electrical: "Electrical",
-  plumbing: "Plumbing",
-  solar: "Solar",
-  fire: "Fire Protection",
-  demolition: "Demolition",
-  pool: "Pool/Spa",
-  fence: "Fence",
-  concrete: "Concrete",
-  windows_doors: "Windows/Doors",
-  insulation: "Insulation",
-  new_construction: "New Construction",
-  renovation: "Renovation",
-  general: "General",
+  hvac: "HVAC", roofing: "Roofing", electrical: "Electrical", plumbing: "Plumbing",
+  solar: "Solar", fire: "Fire Protection", demolition: "Demolition", pool: "Pool/Spa",
+  fence: "Fence", concrete: "Concrete", windows_doors: "Windows/Doors",
+  insulation: "Insulation", new_construction: "New Construction",
+  renovation: "Renovation", general: "General",
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -40,39 +30,70 @@ const CATEGORY_COLORS: Record<string, string> = {
   general: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
 };
 
-export default function DashboardClient({ profile, permits, viewsMap: initialViews }: any) {
-  const [filterCategory, setFilterCategory] = useState("all");
-  const [filterCity, setFilterCity] = useState("all");
-  const [filterState, setFilterState] = useState("all");
+interface Props {
+  profile: any;
+  initialPermits: any[];
+  totalCount: number;
+  pageSize: number;
+  viewsMap: Record<string, { starred: boolean; notes: string | null }>;
+}
+
+export default function DashboardClient({ profile, initialPermits, totalCount, pageSize, viewsMap: initialViews }: Props) {
+  const [permits, setPermits] = useState(initialPermits);
+  const [total, setTotal] = useState(totalCount);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterState, setFilterState] = useState("");
+  const [filterCity, setFilterCity] = useState("");
   const [starredMap, setStarredMap] = useState(initialViews);
   const [showStarredOnly, setShowStarredOnly] = useState(false);
+
   const router = useRouter();
   const supabase = createClient();
 
-  const filteredPermits = permits.filter((p: any) => {
-    if (filterCategory !== "all" && p.category !== filterCategory) return false;
-    if (filterCity !== "all" && p.city !== filterCity) return false;
-    if (filterState !== "all" && p.state !== filterState) return false;
-    if (showStarredOnly && !starredMap[p.id]?.starred) return false;
-    return true;
-  });
+  const totalPages = Math.ceil(total / pageSize);
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const todayCount = permits.filter((p: any) => p.filed_date === todayStr).length;
-  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
-  const weekCount = permits.filter((p: any) => new Date(p.filed_date) >= weekAgo).length;
+  // Fetch page from API
+  const fetchPage = useCallback(async (p: number, cat: string, st: string, city: string) => {
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(p), limit: String(pageSize) });
+    if (cat) params.set("category", cat);
+    if (st) params.set("state", st);
+    if (city) params.set("city", city);
+
+    try {
+      const res = await fetch(`/api/permits?${params.toString()}`);
+      const data = await res.json();
+      if (data.permits) {
+        setPermits(data.permits);
+        setTotal(data.total);
+      }
+    } catch (err) {
+      console.error("Failed to fetch permits", err);
+    }
+    setLoading(false);
+  }, [pageSize]);
+
+  // When filters change, reset to page 1
+  useEffect(() => {
+    setPage(1);
+    fetchPage(1, filterCategory, filterState, filterCity);
+  }, [filterCategory, filterState, filterCity, fetchPage]);
+
+  const goToPage = (p: number) => {
+    if (p < 1 || p > totalPages) return;
+    setPage(p);
+    fetchPage(p, filterCategory, filterState, filterCity);
+  };
+
+  // Client-side starred filter (applies on top of server results)
+  const displayPermits = showStarredOnly
+    ? permits.filter((p: any) => starredMap[p.id]?.starred)
+    : permits;
+
   const starredCount = Object.values(starredMap).filter((v: any) => v.starred).length;
-  const pipelineValue = filteredPermits.reduce((sum: number, p: any) => sum + (p.estimated_value || 0), 0);
-
-  // Build filter options from actual data
-  const states = [...new Set(permits.map((p: any) => p.state).filter(Boolean))].sort() as string[];
-  const categories = [...new Set(permits.map((p: any) => p.category).filter(Boolean))].sort() as string[];
-  const cities = [...new Set(
-    permits
-      .filter((p: any) => filterState === "all" || p.state === filterState)
-      .map((p: any) => p.city)
-      .filter(Boolean)
-  )].sort() as string[];
 
   const toggleStar = async (permitId: string) => {
     const current = starredMap[permitId];
@@ -88,7 +109,7 @@ export default function DashboardClient({ profile, permits, viewsMap: initialVie
 
   const exportCSV = () => {
     const headers = ["Category", "Type", "Address", "City", "State", "Zip", "Filed Date", "Est Value", "Contractor", "Description"];
-    const rows = filteredPermits.map((p: any) => [
+    const rows = displayPermits.map((p: any) => [
       p.category, p.permit_type, `"${(p.address || "").replace(/"/g, '""')}"`,
       p.city, p.state, p.zip_code, p.filed_date, p.estimated_value,
       `"${(p.contractor_name || "").replace(/"/g, '""')}"`,
@@ -97,7 +118,22 @@ export default function DashboardClient({ profile, permits, viewsMap: initialVie
     const csv = [headers, ...rows].map((r: any) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = "permitpulse-export-" + todayStr + ".csv"; a.click();
+    a.download = "permitpulse-export.csv"; a.click();
+  };
+
+  // Build page numbers for pagination
+  const pageNumbers = () => {
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (page > 3) pages.push("...");
+      for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+      if (page < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
   };
 
   return (
@@ -118,10 +154,10 @@ export default function DashboardClient({ profile, permits, viewsMap: initialVie
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "New today", value: todayCount },
-            { label: "This week", value: weekCount },
+            { label: "Total permits", value: total.toLocaleString() },
+            { label: "Showing", value: displayPermits.length },
             { label: "Starred", value: starredCount },
-            { label: "Pipeline value", value: "$" + pipelineValue.toLocaleString() },
+            { label: "Page", value: `${page} / ${totalPages || 1}` },
           ].map((stat) => (
             <div key={stat.label} className="bg-zinc-900 rounded-lg px-5 py-4">
               <p className="text-zinc-500 text-xs mb-1">{stat.label}</p>
@@ -132,24 +168,25 @@ export default function DashboardClient({ profile, permits, viewsMap: initialVie
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3 mb-6">
-          <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
-            <option value="all">All categories</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>{CATEGORY_LABELS[cat] || cat}</option>
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+          >
+            <option value="">All categories</option>
+            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
             ))}
           </select>
 
-          <select value={filterState} onChange={(e) => { setFilterState(e.target.value); setFilterCity("all"); }} className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
-            <option value="all">All states</option>
-            {states.map((st) => (
+          <select
+            value={filterState}
+            onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
+            className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+          >
+            <option value="">All states</option>
+            {["CA", "FL", "IL", "LA", "MD", "NY", "OH", "TX", "WA"].map((st) => (
               <option key={st} value={st}>{st}</option>
-            ))}
-          </select>
-
-          <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
-            <option value="all">All cities</option>
-            {cities.map((city) => (
-              <option key={city} value={city}>{city}</option>
             ))}
           </select>
 
@@ -161,44 +198,104 @@ export default function DashboardClient({ profile, permits, viewsMap: initialVie
           </button>
 
           <div className="flex-1" />
-          <span className="text-zinc-500 text-sm">{filteredPermits.length} permits</span>
+          <span className="text-zinc-500 text-sm">{total.toLocaleString()} total</span>
           <button onClick={exportCSV} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm transition-colors">Export CSV</button>
         </div>
 
         {/* Table */}
-        {filteredPermits.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-20">
+            <div className="text-zinc-500 animate-pulse">Loading permits...</div>
+          </div>
+        ) : displayPermits.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-4xl mb-4">📋</p>
-            <h3 className="text-white text-lg font-semibold mb-2">No permits yet</h3>
-            <p className="text-zinc-500 text-sm max-w-md mx-auto">Head to the <a href="/admin" className="text-green-400 underline">Admin panel</a> and hit Sync to pull in permit data.</p>
+            <h3 className="text-white text-lg font-semibold mb-2">No permits found</h3>
+            <p className="text-zinc-500 text-sm max-w-md mx-auto">
+              {total === 0 ? (
+                <>Head to the <a href="/admin" className="text-green-400 underline">Admin panel</a> and hit Sync to pull in permit data.</>
+              ) : "Try adjusting your filters."}
+            </p>
           </div>
         ) : (
-          <div className="border border-zinc-800 rounded-lg overflow-hidden overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-zinc-800 text-left">
-                  <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider w-8"></th>
-                  <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider">Category</th>
-                  <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider">Address</th>
-                  <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider">Filed</th>
-                  <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider text-right">Est. value</th>
-                  <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider">Contractor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPermits.map((permit: any) => (
-                  <tr key={permit.id} className="border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors">
-                    <td className="px-4 py-3"><button onClick={() => toggleStar(permit.id)} className="text-lg">{starredMap[permit.id]?.starred ? "⭐" : "☆"}</button></td>
-                    <td className="px-4 py-3"><span className={"inline-block px-2.5 py-1 rounded-full text-xs font-medium border " + (CATEGORY_COLORS[permit.category] || CATEGORY_COLORS.general)}>{CATEGORY_LABELS[permit.category] || permit.category || "Permit"}</span></td>
-                    <td className="px-4 py-3"><div className="text-white text-sm">{permit.address}</div><div className="text-zinc-500 text-xs">{permit.city}, {permit.state} {permit.zip_code}</div></td>
-                    <td className="px-4 py-3 text-zinc-400 text-sm">{permit.filed_date}</td>
-                    <td className="px-4 py-3 text-right text-green-400 text-sm font-mono font-medium">{permit.estimated_value ? "$" + Number(permit.estimated_value).toLocaleString() : "—"}</td>
-                    <td className="px-4 py-3 text-zinc-400 text-sm">{permit.contractor_name || "—"}</td>
+          <>
+            <div className="border border-zinc-800 rounded-lg overflow-hidden overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-zinc-800 text-left">
+                    <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider w-8"></th>
+                    <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider">Category</th>
+                    <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider">Address</th>
+                    <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider">Filed</th>
+                    <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider text-right">Est. value</th>
+                    <th className="px-4 py-3 text-zinc-500 text-xs font-medium uppercase tracking-wider">Contractor</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {displayPermits.map((permit: any) => (
+                    <tr key={permit.id} className="border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors">
+                      <td className="px-4 py-3">
+                        <button onClick={() => toggleStar(permit.id)} className="text-lg">
+                          {starredMap[permit.id]?.starred ? "⭐" : "☆"}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={"inline-block px-2.5 py-1 rounded-full text-xs font-medium border " + (CATEGORY_COLORS[permit.category] || CATEGORY_COLORS.general)}>
+                          {CATEGORY_LABELS[permit.category] || permit.category || "Permit"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-white text-sm">{permit.address}</div>
+                        <div className="text-zinc-500 text-xs">{permit.city}, {permit.state} {permit.zip_code}</div>
+                      </td>
+                      <td className="px-4 py-3 text-zinc-400 text-sm">{permit.filed_date}</td>
+                      <td className="px-4 py-3 text-right text-green-400 text-sm font-mono font-medium">
+                        {permit.estimated_value ? "$" + Number(permit.estimated_value).toLocaleString() : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-400 text-sm">{permit.contractor_name || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-1 mt-6">
+                <button
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page === 1}
+                  className="px-3 py-2 text-sm rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  Prev
+                </button>
+                {pageNumbers().map((p, i) =>
+                  p === "..." ? (
+                    <span key={`dots-${i}`} className="px-2 text-zinc-600">...</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => goToPage(p as number)}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                        p === page
+                          ? "bg-green-500/20 border-green-500/30 text-green-400"
+                          : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page === totalPages}
+                  className="px-3 py-2 text-sm rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -8,14 +8,13 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
-  // Get profile (don't require onboarding — just load what we have)
+  // Get profile
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .single();
 
-  // If no profile yet, create a basic one
   if (!profile) {
     await supabase.from("profiles").upsert({
       id: user.id,
@@ -25,12 +24,13 @@ export default async function DashboardPage() {
     });
   }
 
-  // Fetch ALL permits — no zip filter, ordered by most recent, limit 500
-  const { data: permits } = await supabase
+  // Only fetch the first page (50 rows) — client handles pagination
+  const PAGE_SIZE = 50;
+  const { data: permits, count } = await supabase
     .from("permits")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("filed_date", { ascending: false })
-    .limit(500);
+    .range(0, PAGE_SIZE - 1);
 
   // Get user's starred/viewed permits
   const { data: views } = await supabase
@@ -46,7 +46,9 @@ export default async function DashboardPage() {
   return (
     <DashboardClient
       profile={profile || { company_name: "" }}
-      permits={permits || []}
+      initialPermits={permits || []}
+      totalCount={count || 0}
+      pageSize={PAGE_SIZE}
       viewsMap={viewsMap}
     />
   );
