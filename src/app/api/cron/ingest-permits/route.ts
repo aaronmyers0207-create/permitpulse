@@ -84,7 +84,7 @@ export async function GET(request: Request) {
       // Normalize and filter out invalid permits
       const normalized = rawPermits
         .map((raw: any) => normalizeSocrataPermit(raw, source.county))
-        .filter((p): p is NonNullable<typeof p> => p !== null);
+        .filter((p: any) => p !== null && p.category !== "other");
 
       // Upsert in batches of 100
       const BATCH_SIZE = 100;
