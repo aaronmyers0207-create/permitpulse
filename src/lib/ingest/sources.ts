@@ -31,8 +31,8 @@ export interface DataSource {
   region: string;       // city / county / state
   state: string;        // 2-letter
   endpoint: string;     // Socrata resource URL
-  date_field: string;   // field used for incremental $where
-  order: string;        // $order clause
+  date_field: string;   // field used for incremental $where (empty = no incremental)
+  order: string;        // $order clause (empty = default order)
   field_map: FieldMap;
 }
 
@@ -75,9 +75,8 @@ const SOURCES: DataSource[] = [
       city: "original_city",
       state: "original_state",
       zip: "original_zip",
-      permit_type: "permittype",
+      permit_type: "permit_type_desc",
       description: "description",
-      contractor: "contractor_name",
       value: "total_job_valuation",
       filed_date: "applieddate",
       issued_date: "issue_date",
@@ -114,7 +113,7 @@ const SOURCES: DataSource[] = [
     date_field: "permitissueddate",
     order: "permitissueddate DESC",
     field_map: {
-      permit_id: "permitnum",
+      permit_id: "permitid",  // unique row ID, not permitnum which has dupes
       address: "propabssubname",
       permit_type: "permittypedescr",
       description: "permitcomments",
@@ -137,7 +136,6 @@ const SOURCES: DataSource[] = [
     field_map: {
       permit_id: "permit_",
       address: "street_number",  // combined in normalizer
-      city: "_city",
       permit_type: "permit_type",
       description: "work_description",
       contractor: "contractor_1_name",
@@ -156,11 +154,12 @@ const SOURCES: DataSource[] = [
     region: "San Francisco",
     state: "CA",
     endpoint: "https://data.sfgov.org/resource/i98e-djp9.json",
-    date_field: "filed_date",
-    order: "filed_date DESC",
+    date_field: "permit_creation_date",
+    order: "permit_creation_date DESC",
     field_map: {
-      permit_id: "permit_number",
+      permit_id: "record_id",  // unique row ID, not permit_number which has dupes
       address: "street_number",  // combined in normalizer
+      zip: "zipcode",
       permit_type: "permit_type_definition",
       description: "description",
       value: "estimated_cost",
@@ -175,8 +174,8 @@ const SOURCES: DataSource[] = [
     region: "Marin County",
     state: "CA",
     endpoint: "https://data.marincounty.gov/resource/mkbn-caye.json",
-    date_field: "issued_date",
-    order: "issued_date DESC",
+    date_field: "most_recent_issued_received_date",
+    order: "most_recent_issued_received_date DESC",
     field_map: {
       permit_id: "permit_number",
       address: "address",
@@ -185,9 +184,12 @@ const SOURCES: DataSource[] = [
       permit_type: "type_permit",
       description: "description",
       contractor: "contractor",
+      contractor_license: "contractor_license",
       value: "construction_value",
       filed_date: "received_date",
       issued_date: "issued_date",
+      latitude: "latitude",
+      longitude: "longitude",
     },
   },
 
@@ -201,7 +203,7 @@ const SOURCES: DataSource[] = [
     date_field: "latest_action_date",
     order: "latest_action_date DESC",
     field_map: {
-      permit_id: "job__",
+      permit_id: "job__",  // combined with doc__ in normalizer for uniqueness
       address: "house__",  // combined in normalizer
       permit_type: "job_type",
       description: "job_description",
@@ -220,8 +222,8 @@ const SOURCES: DataSource[] = [
     region: "Seattle",
     state: "WA",
     endpoint: "https://cos-data.seattle.gov/resource/76t5-zqzr.json",
-    date_field: "applieddate",
-    order: "applieddate DESC",
+    date_field: "",   // no date fields in this dataset
+    order: "",        // no ordering available
     field_map: {
       permit_id: "permitnum",
       address: "originaladdress1",
@@ -231,8 +233,6 @@ const SOURCES: DataSource[] = [
       permit_type: "permittypedesc",
       description: "description",
       value: "estprojectcost",
-      filed_date: "applieddate",
-      issued_date: "issueddate",
       status: "statuscurrent",
       latitude: "latitude",
       longitude: "longitude",
@@ -246,16 +246,16 @@ const SOURCES: DataSource[] = [
     region: "Cincinnati",
     state: "OH",
     endpoint: "https://data.cincinnati-oh.gov/resource/uhjb-xac9.json",
-    date_field: "issueddate",
-    order: "issueddate DESC",
+    date_field: "applieddate",
+    order: "applieddate DESC",
     field_map: {
-      permit_id: "permitnum",
+      permit_id: "permitnum",  // combined with description hash in normalizer
       address: "originaladdress1",
       city: "originalcity",
       state: "originalstate",
       permit_type: "permittypemapped",
       description: "description",
-      value: "estprojectcost",
+      value: "estprojectcostdec",
       filed_date: "applieddate",
       issued_date: "issueddate",
       status: "statuscurrentmapped",
@@ -292,8 +292,8 @@ const SOURCES: DataSource[] = [
     region: "Montgomery County",
     state: "MD",
     endpoint: "https://data.montgomerycountymd.gov/resource/qxie-8qnp.json",
-    date_field: "issueddate",
-    order: "issueddate DESC",
+    date_field: "addeddate",
+    order: "addeddate DESC",
     field_map: {
       permit_id: "permitno",
       address: "stno",  // combined in normalizer
@@ -302,7 +302,6 @@ const SOURCES: DataSource[] = [
       zip: "zip",
       permit_type: "applicationtype",
       description: "description",
-      value: "estimatedcost",
       filed_date: "addeddate",
       issued_date: "issueddate",
       status: "status",

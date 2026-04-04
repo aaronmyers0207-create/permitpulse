@@ -4,9 +4,23 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
+const INDUSTRIES = [
+  "HVAC",
+  "Roofing",
+  "Electrical",
+  "Plumbing",
+  "Solar",
+  "General Contracting",
+  "Home Services",
+  "Property Management",
+  "Real Estate",
+  "Insurance",
+  "Other",
+];
+
 export default function OnboardingCompanyPage() {
   const [companyName, setCompanyName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [industry, setIndustry] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
@@ -18,13 +32,14 @@ export default function OnboardingCompanyPage() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
-      await supabase.from("profiles").update({
+      await supabase.from("profiles").upsert({
+        id: user.id,
+        email: user.email,
         company_name: companyName,
-        phone,
-        updated_at: new Date().toISOString(),
-      }).eq("id", user.id);
+        industry,
+      });
 
-      router.push("/onboarding/territory");
+      router.push("/dashboard");
     }
   };
 
@@ -37,7 +52,7 @@ export default function OnboardingCompanyPage() {
             <span className="text-white text-2xl font-semibold tracking-tight">PermitPulse</span>
           </div>
           <h1 className="text-white text-2xl font-bold mb-2">Tell us about your company</h1>
-          <p className="text-zinc-400 text-sm">Step 1 of 3</p>
+          <p className="text-zinc-400 text-sm">This helps us personalize your experience.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -45,11 +60,16 @@ export default function OnboardingCompanyPage() {
             <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-green-500 transition-colors" placeholder="CoolAir Mechanical" />
           </div>
           <div>
-            <label className="block text-zinc-400 text-sm mb-1.5">Phone number</label>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-green-500 transition-colors" placeholder="(407) 555-0123" />
+            <label className="block text-zinc-400 text-sm mb-1.5">Industry</label>
+            <select value={industry} onChange={(e) => setIndustry(e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-green-500 transition-colors">
+              <option value="" disabled>Select your industry</option>
+              {INDUSTRIES.map((ind) => (
+                <option key={ind} value={ind}>{ind}</option>
+              ))}
+            </select>
           </div>
-          <button type="submit" disabled={loading || !companyName || !phone} className="w-full py-3 rounded-lg bg-green-500 hover:bg-green-600 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            {loading ? "Saving..." : "Continue"}
+          <button type="submit" disabled={loading || !companyName || !industry} className="w-full py-3 rounded-lg bg-green-500 hover:bg-green-600 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {loading ? "Setting up..." : "Go to Dashboard"}
           </button>
         </form>
       </div>

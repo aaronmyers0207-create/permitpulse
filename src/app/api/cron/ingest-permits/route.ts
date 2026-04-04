@@ -39,9 +39,17 @@ export async function GET(request: Request) {
       const rawPermits = await fetchSocrataPermits(source, 1000, lastPullAt);
       sourceResult.fetched = rawPermits.length;
 
-      const normalized = rawPermits
+      const allNormalized = rawPermits
         .map((raw: any) => normalizeSocrataPermit(raw, source))
         .filter((p): p is NonNullable<typeof p> => p !== null);
+
+      // Deduplicate within the batch
+      const seen = new Set<string>();
+      const normalized = allNormalized.filter((p) => {
+        if (seen.has(p.source_permit_id)) return false;
+        seen.add(p.source_permit_id);
+        return true;
+      });
 
       const BATCH = 200;
       for (let i = 0; i < normalized.length; i += BATCH) {

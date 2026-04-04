@@ -8,24 +8,46 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  // Get profile (don't require onboarding — just load what we have)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
 
-  if (!profile?.onboarding_complete) redirect("/onboarding/company");
-
-  const { data: territories } = await supabase.from("territories").select("*").eq("user_id", user.id).eq("active", true);
-
-  const zipCodes = territories?.map((t) => t.zip_code) || [];
-
-  let permits: any[] = [];
-  if (zipCodes.length > 0) {
-    const { data } = await supabase.from("permits").select("*").in("zip_code", zipCodes).order("filed_date", { ascending: false }).limit(100);
-    permits = data || [];
+  // If no profile yet, create a basic one
+  if (!profile) {
+    await supabase.from("profiles").upsert({
+      id: user.id,
+      email: user.email,
+      company_name: "",
+      industry: "",
+    });
   }
 
-  const { data: views } = await supabase.from("permit_views").select("permit_id, starred, notes").eq("user_id", user.id);
+  // Fetch ALL permits — no zip filter, ordered by most recent, limit 500
+  const { data: permits } = await supabase
+    .from("permits")
+    .select("*")
+    .order("filed_date", { ascending: false })
+    .limit(500);
+
+  // Get user's starred/viewed permits
+  const { data: views } = await supabase
+    .from("permit_views")
+    .select("permit_id, starred, notes")
+    .eq("user_id", user.id);
 
   const viewsMap: Record<string, { starred: boolean; notes: string | null }> = {};
-  views?.forEach((v) => { viewsMap[v.permit_id] = { starred: v.starred, notes: v.notes }; });
+  views?.forEach((v) => {
+    viewsMap[v.permit_id] = { starred: v.starred, notes: v.notes };
+  });
 
-  return <DashboardClient profile={profile} permits={permits} territories={territories || []} viewsMap={viewsMap} />;
+  return (
+    <DashboardClient
+      profile={profile || { company_name: "" }}
+      permits={permits || []}
+      viewsMap={viewsMap}
+    />
+  );
 }

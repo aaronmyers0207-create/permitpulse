@@ -40,9 +40,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   general: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
 };
 
-export default function DashboardClient({ profile, permits, territories, viewsMap: initialViews }: any) {
+export default function DashboardClient({ profile, permits, viewsMap: initialViews }: any) {
   const [filterCategory, setFilterCategory] = useState("all");
-  const [filterZip, setFilterZip] = useState("all");
+  const [filterCity, setFilterCity] = useState("all");
   const [filterState, setFilterState] = useState("all");
   const [starredMap, setStarredMap] = useState(initialViews);
   const [showStarredOnly, setShowStarredOnly] = useState(false);
@@ -51,7 +51,7 @@ export default function DashboardClient({ profile, permits, territories, viewsMa
 
   const filteredPermits = permits.filter((p: any) => {
     if (filterCategory !== "all" && p.category !== filterCategory) return false;
-    if (filterZip !== "all" && p.zip_code !== filterZip) return false;
+    if (filterCity !== "all" && p.city !== filterCity) return false;
     if (filterState !== "all" && p.state !== filterState) return false;
     if (showStarredOnly && !starredMap[p.id]?.starred) return false;
     return true;
@@ -62,12 +62,17 @@ export default function DashboardClient({ profile, permits, territories, viewsMa
   const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
   const weekCount = permits.filter((p: any) => new Date(p.filed_date) >= weekAgo).length;
   const starredCount = Object.values(starredMap).filter((v: any) => v.starred).length;
-  const pipelineValue = permits.reduce((sum: number, p: any) => sum + (p.estimated_value || 0), 0);
+  const pipelineValue = filteredPermits.reduce((sum: number, p: any) => sum + (p.estimated_value || 0), 0);
 
-  // Unique states for filter
+  // Build filter options from actual data
   const states = [...new Set(permits.map((p: any) => p.state).filter(Boolean))].sort() as string[];
-  // Unique categories present
   const categories = [...new Set(permits.map((p: any) => p.category).filter(Boolean))].sort() as string[];
+  const cities = [...new Set(
+    permits
+      .filter((p: any) => filterState === "all" || p.state === filterState)
+      .map((p: any) => p.city)
+      .filter(Boolean)
+  )].sort() as string[];
 
   const toggleStar = async (permitId: string) => {
     const current = starredMap[permitId];
@@ -134,16 +139,18 @@ export default function DashboardClient({ profile, permits, territories, viewsMa
             ))}
           </select>
 
-          <select value={filterState} onChange={(e) => setFilterState(e.target.value)} className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
+          <select value={filterState} onChange={(e) => { setFilterState(e.target.value); setFilterCity("all"); }} className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
             <option value="all">All states</option>
             {states.map((st) => (
               <option key={st} value={st}>{st}</option>
             ))}
           </select>
 
-          <select value={filterZip} onChange={(e) => setFilterZip(e.target.value)} className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
-            <option value="all">All zip codes</option>
-            {territories?.map((t: any) => (<option key={t.id} value={t.zip_code}>{t.zip_code} - {t.county || t.state}</option>))}
+          <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
+            <option value="all">All cities</option>
+            {cities.map((city) => (
+              <option key={city} value={city}>{city}</option>
+            ))}
           </select>
 
           <button
@@ -185,7 +192,7 @@ export default function DashboardClient({ profile, permits, territories, viewsMa
                     <td className="px-4 py-3"><span className={"inline-block px-2.5 py-1 rounded-full text-xs font-medium border " + (CATEGORY_COLORS[permit.category] || CATEGORY_COLORS.general)}>{CATEGORY_LABELS[permit.category] || permit.category || "Permit"}</span></td>
                     <td className="px-4 py-3"><div className="text-white text-sm">{permit.address}</div><div className="text-zinc-500 text-xs">{permit.city}, {permit.state} {permit.zip_code}</div></td>
                     <td className="px-4 py-3 text-zinc-400 text-sm">{permit.filed_date}</td>
-                    <td className="px-4 py-3 text-right text-green-400 text-sm font-mono font-medium">{permit.estimated_value ? "$" + permit.estimated_value.toLocaleString() : "—"}</td>
+                    <td className="px-4 py-3 text-right text-green-400 text-sm font-mono font-medium">{permit.estimated_value ? "$" + Number(permit.estimated_value).toLocaleString() : "—"}</td>
                     <td className="px-4 py-3 text-zinc-400 text-sm">{permit.contractor_name || "—"}</td>
                   </tr>
                 ))}

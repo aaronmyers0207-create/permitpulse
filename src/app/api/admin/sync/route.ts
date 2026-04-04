@@ -74,9 +74,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Normalise rows
-    const normalized = rawPermits
+    const allNormalized = rawPermits
       .map((raw: any) => normalizeSocrataPermit(raw, source))
       .filter((p): p is NonNullable<typeof p> => p !== null);
+
+    // Deduplicate within the batch — Postgres upsert can't handle
+    // the same source_permit_id appearing twice in one batch
+    const seen = new Set<string>();
+    const normalized = allNormalized.filter((p) => {
+      if (seen.has(p.source_permit_id)) return false;
+      seen.add(p.source_permit_id);
+      return true;
+    });
 
     result.skipped = result.fetched - normalized.length;
 

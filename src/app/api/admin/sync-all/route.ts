@@ -44,9 +44,17 @@ export async function POST(request: NextRequest) {
       const rawPermits = await fetchSocrataPermits(source, Math.min(limit, 5000), lastPullAt);
       result.fetched = rawPermits.length;
 
-      const normalized = rawPermits
+      const allNormalized = rawPermits
         .map((raw: any) => normalizeSocrataPermit(raw, source))
         .filter((p): p is NonNullable<typeof p> => p !== null);
+
+      // Deduplicate within the batch
+      const seen = new Set<string>();
+      const normalized = allNormalized.filter((p) => {
+        if (seen.has(p.source_permit_id)) return false;
+        seen.add(p.source_permit_id);
+        return true;
+      });
 
       result.skipped = result.fetched - normalized.length;
 
