@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { INDUSTRY_MAP, COVERED_STATES } from "@/lib/industries";
 import { getUserTier } from "@/lib/tiers";
-import { CYCLE_MAP } from "@/lib/prospecting";
+import { CYCLE_MAP, getUpsellsForIndustry, type UpsellOpportunity } from "@/lib/prospecting";
 
 const CAT: Record<string, { label: string; bg: string }> = {
   hvac:              { label: "HVAC",             bg: "bg-emerald-50 text-emerald-700 border-emerald-200/60" },
@@ -37,7 +37,9 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
 
   const industry = INDUSTRY_MAP[profile?.industry] || null;
   const tier = getUserTier(profile);
-  const [mode, setMode] = useState<"new" | "replacement">("new");
+  const [mode, setMode] = useState<"new" | "replacement" | "upsell">("new");
+  const [activeUpsell, setActiveUpsell] = useState<UpsellOpportunity | null>(null);
+  const upsells = industry ? getUpsellsForIndustry(industry.id) : [];
   const [filterCategory, setFilterCategory] = useState("");
   const [filterState, setFilterState] = useState("");
   const [tierLimited, setTierLimited] = useState(false);
@@ -52,7 +54,13 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
     setLoading(true);
     const params = new URLSearchParams({ page: String(p), limit: String(pageSize) });
     params.set("mode", mode);
-    if (cat) params.set("category", cat);
+    if (mode === "upsell" && activeUpsell) {
+      params.set("upsell_category", activeUpsell.lookForCategory);
+      params.set("upsell_min_age", String(activeUpsell.minAge));
+      params.set("upsell_max_age", String(activeUpsell.maxAge));
+    } else if (cat) {
+      params.set("category", cat);
+    }
     if (st) params.set("state", st);
     if (q) params.set("q", q);
     const userStates = profile?.states as string[] | null;
@@ -63,9 +71,9 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
       if (data.permits) { setPermits(data.permits); setTotal(data.total); setTierLimited(!!data.tierLimited); }
     } catch (err) { console.error("Fetch error", err); }
     setLoading(false);
-  }, [pageSize, profile?.states, mode]);
+  }, [pageSize, profile?.states, mode, activeUpsell]);
 
-  useEffect(() => { setPage(1); fetchPage(1, filterCategory, filterState, search); }, [filterCategory, filterState, mode, fetchPage]);
+  useEffect(() => { setPage(1); fetchPage(1, filterCategory, filterState, search); }, [filterCategory, filterState, mode, activeUpsell, fetchPage]);
 
   const handleSearch = (val: string) => {
     setSearch(val); clearTimeout(searchTimeout.current);
@@ -140,14 +148,43 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
         </div>
 
         {/* Mode toggle */}
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
           <div className="inline-flex bg-white/70 backdrop-blur-xl border border-black/[0.06] rounded-xl p-1 shadow-sm">
-            <button onClick={() => setMode("new")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="new"?"bg-[#01696F] text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>New Permits</button>
-            <button onClick={() => setMode("replacement")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="replacement"?"bg-amber-500 text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Replacement Ready</button>
+            <button onClick={() => { setMode("new"); setActiveUpsell(null); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="new"?"bg-[#01696F] text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>New Permits</button>
+            <button onClick={() => { setMode("replacement"); setActiveUpsell(null); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="replacement"?"bg-amber-500 text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Replacement Ready</button>
+            {upsells.length > 0 && <button onClick={() => { setMode("upsell"); if (!activeUpsell && upsells[0]) setActiveUpsell(upsells[0]); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="upsell"?"bg-purple-500 text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Upsell Ready</button>}
           </div>
-          {mode==="replacement"&&filterCategory&&CYCLE_MAP[filterCategory]&&<span className="text-[#6E6E73] text-xs ml-2">Showing {CYCLE_MAP[filterCategory].label} permits from {CYCLE_MAP[filterCategory].prospectAfter}-{CYCLE_MAP[filterCategory].lifespan} years ago</span>}
-          {mode==="replacement"&&!filterCategory&&<span className="text-amber-600/60 text-xs ml-2">Select a category to see replacement-ready permits</span>}
+          {mode==="replacement"&&filterCategory&&CYCLE_MAP[filterCategory]&&<span className="text-[#6E6E73] text-xs">Showing {CYCLE_MAP[filterCategory].label} permits {CYCLE_MAP[filterCategory].prospectAfter}-{CYCLE_MAP[filterCategory].lifespan}yr old</span>}
+          {mode==="replacement"&&!filterCategory&&<span className="text-amber-600/60 text-xs">Select a category to see replacement-ready permits</span>}
+          {mode==="upsell"&&activeUpsell&&<span className="text-purple-600/70 text-xs">Finding {activeUpsell.lookForLabel} opportunities</span>}
         </div>
+
+        {/* Upsell opportunity selector */}
+        {mode==="upsell"&&upsells.length>0&&(
+          <div className="mb-5 space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {upsells.map((u, i) => (
+                <button key={i} onClick={() => setActiveUpsell(u)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all shadow-sm ${
+                    activeUpsell === u ? "bg-purple-50 border-purple-300 text-purple-700" : "bg-white border-gray-200 text-[#6E6E73] hover:border-gray-300"
+                  }`}>
+                  {u.lookForLabel}
+                </button>
+              ))}
+            </div>
+            {activeUpsell && (
+              <div className="bg-purple-50/80 backdrop-blur-sm border border-purple-200/40 rounded-2xl px-5 py-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <span className="text-purple-600 text-lg mt-0.5">🎯</span>
+                  <div>
+                    <p className="text-purple-800 text-sm font-medium mb-1">{activeUpsell.lookForLabel}</p>
+                    <p className="text-purple-700/70 text-sm leading-relaxed">{activeUpsell.pitch}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Replacement pitch */}
         {mode==="replacement"&&filterCategory&&CYCLE_MAP[filterCategory]&&(
