@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
+import { getUserTier } from "@/lib/tiers";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -8,7 +9,6 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
-  // Get profile
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
@@ -22,17 +22,36 @@ export default async function DashboardPage() {
       company_name: "",
       industry: "",
     });
+    redirect("/onboarding/company");
   }
 
-  // Only fetch the first page (50 rows) — client handles pagination
+  const tier = getUserTier(profile);
   const PAGE_SIZE = 50;
-  const { data: permits, count } = await supabase
+
+  // Build query — new permits from last 2 years, ordered recent first
+  const twoYearsAgo = new Date();
+  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+  let query = supabase
     .from("permits")
     .select("*", { count: "exact" })
-    .order("filed_date", { ascending: false })
-    .range(0, PAGE_SIZE - 1);
+    .gte("filed_date", twoYearsAgo.toISOString().split("T")[0])
+    .order("filed_date", { ascending: false });
 
-  // Get user's starred/viewed permits
+  // Filter by user's states
+  const states = profile.states as string[] | null;
+  if (states && states.length > 0 && states.length < 9) {
+    query = query.in("state", states);
+  }
+
+  // Enforce tier limit
+  const maxPermits = tier.permitLimit || 999999;
+  const effectiveLimit = Math.min(PAGE_SIZE, maxPermits);
+
+  const { data: permits, count } = await query.range(0, effectiveLimit - 1);
+  const cappedTotal = tier.permitLimit > 0 ? Math.min(count || 0, maxPermits) : (count || 0);
+
+  // Get starred permits
   const { data: views } = await supabase
     .from("permit_views")
     .select("permit_id, starred, notes")
@@ -45,9 +64,9 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      profile={profile || { company_name: "" }}
+      profile={profile}
       initialPermits={permits || []}
-      totalCount={count || 0}
+      totalCount={cappedTotal}
       pageSize={PAGE_SIZE}
       viewsMap={viewsMap}
     />
