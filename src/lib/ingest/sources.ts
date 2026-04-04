@@ -60,6 +60,27 @@ const SOURCES: DataSource[] = [
     },
   },
 
+  {
+    id: "orlando_fl",
+    name: "Orlando FL Permits",
+    region: "Orlando",
+    state: "FL",
+    endpoint: "https://data.cityoforlando.net/resource/ryhf-m453.json",
+    date_field: "processed_date",
+    order: "processed_date DESC",
+    field_map: {
+      permit_id: "permit_number",
+      address: "permit_address",
+      permit_type: "application_type",
+      description: "worktype",
+      applicant: "property_owner_name",
+      contractor: "contractor_name",
+      value: "estimated_cost",
+      filed_date: "processed_date",
+      status: "application_status",
+    },
+  },
+
   // ── Texas ────────────────────────────────────────
   {
     id: "austin_tx",

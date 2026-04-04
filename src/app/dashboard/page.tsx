@@ -28,14 +28,10 @@ export default async function DashboardPage() {
   const tier = getUserTier(profile);
   const PAGE_SIZE = 50;
 
-  // Build query — new permits from last 2 years, ordered recent first
-  const twoYearsAgo = new Date();
-  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-
+  // Build query — all permits, ordered recent first
   let query = supabase
     .from("permits")
     .select("*", { count: "exact" })
-    .gte("filed_date", twoYearsAgo.toISOString().split("T")[0])
     .order("filed_date", { ascending: false });
 
   // Filter by user's states

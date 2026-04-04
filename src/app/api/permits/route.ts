@@ -77,12 +77,8 @@ export async function GET(request: NextRequest) {
     if (range) {
       query = query.gte("filed_date", range.from).lte("filed_date", range.to);
     }
-  } else if (mode === "new") {
-    // New permits = last 2 years
-    const twoYearsAgo = new Date();
-    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-    query = query.gte("filed_date", twoYearsAgo.toISOString().split("T")[0]);
   }
+  // "new" mode = no date filter, just ordered by most recent
 
   const { data: permits, count, error } = await query.range(from, to);
 

@@ -15,6 +15,16 @@ export interface Tier {
   popular?: boolean;
 }
 
+export const ADMIN_TIER: Tier = {
+  id: "admin",
+  name: "Admin",
+  price: 0,
+  permitLimit: 0,
+  skipTraceLimit: 99999,
+  features: ["Unlimited everything", "All states", "Admin panel access"],
+  cta: "Admin",
+};
+
 export const TIERS: Tier[] = [
   {
     id: "free",
@@ -68,7 +78,10 @@ export const TIERS: Tier[] = [
   },
 ];
 
-export const TIER_MAP = Object.fromEntries(TIERS.map((t) => [t.id, t]));
+export const TIER_MAP: Record<string, Tier> = {
+  ...Object.fromEntries(TIERS.map((t) => [t.id, t])),
+  admin: ADMIN_TIER,
+};
 
 /** Get the user's effective tier, default to free */
 export function getUserTier(profile: any): Tier {
@@ -89,6 +102,7 @@ export function isAtSkipTraceLimit(tier: Tier, usedThisMonth: number): boolean {
 
 /** Max states allowed per tier */
 export function maxStates(tier: Tier): number {
+  if (tier.id === "admin") return 9;
   if (tier.id === "free") return 1;
   if (tier.id === "basic") return 3;
   return 9; // pro = all

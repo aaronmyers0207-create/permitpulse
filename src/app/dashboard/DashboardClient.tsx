@@ -271,6 +271,48 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                 {selectedPermit.contractor_name&&(<div className="bg-white/70 backdrop-blur-xl border border-black/[0.04] rounded-xl px-4 py-3 shadow-sm"><p className="text-[#A1A1A6] text-xs uppercase tracking-wider mb-0.5">Contractor</p><p className="text-[#1D1D1F] text-sm font-medium">{selectedPermit.contractor_name}</p></div>)}
               </div>
               {selectedPermit.description&&(<div><p className="text-[#A1A1A6] text-xs uppercase tracking-wider mb-1">Description</p><p className="text-[#6E6E73] text-sm leading-relaxed">{selectedPermit.description}</p></div>)}
+              {/* Skip Trace */}
+              <div className="bg-[#01696F]/[0.04] border border-[#01696F]/15 rounded-xl px-4 py-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-[#1D1D1F] text-sm font-medium">Skip Trace</p>
+                    <p className="text-[#A1A1A6] text-xs">Get phone numbers, emails, and mailing address for this property owner.</p>
+                  </div>
+                </div>
+                {selectedPermit.skip_trace_data && Object.keys(selectedPermit.skip_trace_data).length > 0 ? (
+                  <div className="text-xs text-[#6E6E73] bg-white/80 rounded-lg px-3 py-2 mt-2">
+                    <p className="text-emerald-600 font-medium mb-1">Skip trace submitted</p>
+                    <p>Status: {selectedPermit.skip_trace_data.status}</p>
+                    {selectedPermit.skip_trace_data.queue_id && <p>Queue ID: {selectedPermit.skip_trace_data.queue_id}</p>}
+                  </div>
+                ) : (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const btn = e.currentTarget;
+                      btn.disabled = true;
+                      btn.textContent = "Tracing...";
+                      try {
+                        const res = await fetch("/api/skip-trace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ permitId: selectedPermit.id }) });
+                        const data = await res.json();
+                        if (data.ok) {
+                          setSelectedPermit({ ...selectedPermit, skip_trace_data: data.data });
+                          btn.textContent = "Submitted";
+                        } else {
+                          alert(data.error || "Skip trace failed");
+                          btn.disabled = false;
+                          btn.textContent = "Skip Trace Owner";
+                        }
+                      } catch { btn.disabled = false; btn.textContent = "Skip Trace Owner"; }
+                    }}
+                    disabled={!selectedPermit.applicant_name}
+                    className="mt-2 w-full py-2.5 rounded-xl bg-[#01696F] hover:bg-[#0C4E54] text-white text-sm font-medium transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {selectedPermit.applicant_name ? "Skip Trace Owner" : "No owner name available"}
+                  </button>
+                )}
+              </div>
+
               <div className="flex gap-2">
                 <button onClick={()=>toggleStar(selectedPermit.id)} className={`flex-1 py-3 rounded-xl font-medium text-sm transition-colors shadow-sm ${starredMap[selectedPermit.id]?.starred?"bg-amber-50 border border-amber-200/60 text-amber-700":"bg-white border border-gray-200 text-[#6E6E73] hover:bg-gray-50"}`}>{starredMap[selectedPermit.id]?.starred?"★ Starred":"☆ Star this lead"}</button>
                 <button onClick={exportCSV} className="px-5 py-3 rounded-xl bg-white border border-gray-200 text-[#6E6E73] text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">Export</button>
