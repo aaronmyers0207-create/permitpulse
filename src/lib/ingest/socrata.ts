@@ -1,105 +1,46 @@
 import { classifyPermit, estimateValue } from "./classifier";
 
-interface SocrataPermit {
-  permit_number?: string;
-  permit_type?: string;
-  application_type?: string;
-  description?: string;
-  address?: string;
-  city?: string;
-  zip?: string;
-  zip_code?: string;
-  issue_date?: string;
-  application_date?: string;
-  contractor_name?: string;
-  contractor_license_number?: string;
-  applicant_name?: string;
-  owner_name?: string;
-  status?: string;
-  [key: string]: any;
-}
-
-export interface NormalizedPermit {
-  source_permit_id: string;
-  permit_type: string;
-  category: string;
-  address: string;
-  city: string;
-  zip_code: string;
-  county: string;
-  applicant_name: string;
-  contractor_name: string;
-  contractor_license: string;
-  description: string;
-  estimated_value: number;
-  filed_date: string;
-  status: string;
-  raw_data: any;
-}
-
-export async function fetchSocrataPermits(
-  endpoint: string,
-  config: any,
-  lastPullAt: string | null
-): Promise<SocrataPermit[]> {
+export async function fetchSocrataPermits(endpoint: string, config: any, lastPullAt: string | null) {
   const params = new URLSearchParams();
   params.set("$limit", String(config.limit || 1000));
-
-  if (config.order) {
-    params.set("$order", config.order);
-  }
-
+  if (config.order) params.set("$order", config.order);
   if (lastPullAt) {
-    const dateField = config.date_field || "issue_date";
+    const dateField = config.date_field || "processed_date";
     const dateStr = new Date(lastPullAt).toISOString().split("T")[0];
-    params.set("$where", `${dateField} >= '${dateStr}'`);
+    params.set("$where", dateField + " >= '" + dateStr + "'");
   }
-
-  const url = `${endpoint}?${params.toString()}`;
-  console.log("Fetching Socrata:", url);
-
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      ...(config.app_token ? { "X-App-Token": config.app_token } : {}),
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Socrata API error: ${res.status} ${res.statusText}`);
-  }
-
+  const url = endpoint + "?" + params.toString();
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!res.ok) throw new Error("Socrata error: " + res.status);
   return res.json();
 }
 
-export function normalizeSocrataPermit(
-  raw: SocrataPermit,
-  county: string
-): NormalizedPermit | null {
-  const permitId = raw.permit_number || raw.permitnumber || raw.permit_num || "";
-  const address = raw.address || raw.project_address || raw.location || "";
-  const description = raw.description || raw.work_description || raw.scope_of_work || "";
-  const permitType = raw.permit_type || raw.application_type || raw.type || "";
-
+export function normalizeSocrataPermit(raw: any, county: string) {
+  const permitId = raw.permit_number || "";
+  const address = raw.permit_address || "";
+  const description = (raw.worktype || "") + " " + (raw.project_name || "") + " " + (raw.application_type || "");
+  const permitType = raw.application_type || "";
   if (!permitId || !address) return null;
-
   const category = classifyPermit(permitType, description);
-
+  
+  let zipCode = "";
+  const latLng = raw["permit_address_lat/long"] || raw.permit_address_lat_long || "";
+  
   return {
     source_permit_id: permitId,
     permit_type: permitType,
-    category,
+    category: category,
     address: address.trim(),
-    city: (raw.city || "Orlando").trim(),
-    zip_code: (raw.zip || raw.zip_code || raw.zipcode || "").trim().slice(0, 5),
-    county,
-    applicant_name: (raw.applicant_name || raw.owner_name || "").trim(),
-    contractor_name: (raw.contractor_name || "").trim(),
-    contractor_license: (raw.contractor_license_number || "").trim(),
+    city: "Orlando",
+    zip_code: zipCode,
+    county: county,
+    applicant_name: (raw.property_owner_name || "").trim(),
+    contractor_name: (raw.contractor_name || raw.contractor || "").trim(),
+    contractor_license: "",
     description: description.trim().slice(0, 500),
-    estimated_value: estimateValue(category),
-    filed_date: (raw.issue_date || raw.application_date || new Date().toISOString()).split("T")[0],
-    status: raw.status || "active",
+    estimated_value: Number(raw.estimated_cost) > 0 ? Number(raw.estimated_cost) : estimateValue(category),
+    filed_date: (raw.processed_date || raw.issue_permit_date || new Date().toISOString()).split("T")[0],
+    status: (raw.application_status || "active").toLowerCase(),
     raw_data: raw,
   };
 }
