@@ -146,8 +146,7 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
       <nav className="glass-strong sticky top-0 z-30 border-b border-black/[0.04] px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/icon.png" alt="Permit Tracer" className="w-8 h-8 rounded-lg object-contain"/>
-            <span className="text-[#1D1D1F] font-semibold tracking-tight">Permit Tracer</span>
+            <img src="/logo.png" alt="Permit Tracer" className="h-7 object-contain"/>
             {industry && <span className="hidden sm:inline-block ml-2 px-2.5 py-0.5 rounded-full bg-[#01696F]/[0.06] text-[#01696F] text-xs font-medium">{industry.icon} {industry.label}</span>}
           </div>
           <div className="flex items-center gap-4">
@@ -368,7 +367,54 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                   <p className="text-[#1D1D1F] font-semibold text-sm mb-1">Skip Trace</p>
                   <p className="text-[#6E6E73] text-xs mb-3">Get phone numbers, emails, and mailing address.</p>
                   {selectedPermit.skip_trace_data && Object.keys(selectedPermit.skip_trace_data).length > 0 ? (
-                    <div className="bg-white/80 rounded-xl px-4 py-3"><p className="text-emerald-600 text-sm font-medium">Skip trace submitted</p><p className="text-[#A1A1A6] text-xs mt-1">Queue: {selectedPermit.skip_trace_data.queue_id}</p></div>
+                    <div className="space-y-2">
+                      {/* Phones */}
+                      {selectedPermit.skip_trace_data.phones?.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {selectedPermit.skip_trace_data.phones.map((ph: any, i: number) => (
+                            <div key={i} className="bg-white rounded-xl px-4 py-3 flex items-center justify-between shadow-sm border border-black/[0.04]">
+                              <div>
+                                <p className="text-[#1D1D1F] text-sm font-semibold font-mono">{ph.number}</p>
+                                <p className="text-[#A1A1A6] text-xs">{ph.type || "Phone"}{ph.dnc === "true" ? " · DNC" : ph.dnc === "false" ? " · Not on DNC" : ""}</p>
+                              </div>
+                              <a href={`tel:${ph.number}`} className="w-8 h-8 rounded-lg bg-[#01696F]/10 flex items-center justify-center">
+                                <svg className="w-4 h-4 text-[#01696F]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                      {/* Emails */}
+                      {selectedPermit.skip_trace_data.emails?.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {selectedPermit.skip_trace_data.emails.map((em: string, i: number) => (
+                            <div key={i} className="bg-white rounded-xl px-4 py-3 flex items-center justify-between shadow-sm border border-black/[0.04]">
+                              <div>
+                                <p className="text-[#1D1D1F] text-sm font-medium">{em}</p>
+                                <p className="text-[#A1A1A6] text-xs">Email</p>
+                              </div>
+                              <a href={`mailto:${em}`} className="w-8 h-8 rounded-lg bg-[#01696F]/10 flex items-center justify-center">
+                                <svg className="w-4 h-4 text-[#01696F]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                      {/* No results or still processing */}
+                      {(!selectedPermit.skip_trace_data.phones?.length && !selectedPermit.skip_trace_data.emails?.length) && (
+                        <div className="bg-white/80 rounded-xl px-4 py-3">
+                          <p className="text-amber-600 text-sm font-medium">{selectedPermit.skip_trace_data.status === "completed" ? "No contact info found" : "Processing..."}</p>
+                          <p className="text-[#A1A1A6] text-xs mt-1">Queue: {selectedPermit.skip_trace_data.queue_id}</p>
+                          {selectedPermit.skip_trace_data.status !== "completed" && (
+                            <button onClick={async () => {
+                              const r = await fetch("/api/skip-trace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ permitId: selectedPermit.id }) });
+                              const d = await r.json();
+                              if (d.ok) setSelectedPermit({ ...selectedPermit, skip_trace_data: d.data });
+                            }} className="mt-2 text-[#01696F] text-xs font-medium underline">Check for results</button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <button onClick={async (e) => { e.stopPropagation(); const b=e.currentTarget; b.disabled=true; b.textContent="Tracing..."; try { const r=await fetch("/api/skip-trace",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({permitId:selectedPermit.id})}); const d=await r.json(); if(d.ok){setSelectedPermit({...selectedPermit,skip_trace_data:d.data});b.textContent="Done";}else{alert(d.error);b.disabled=false;b.textContent="Skip Trace Owner";}}catch{b.disabled=false;b.textContent="Skip Trace Owner";}}}
                       disabled={!selectedPermit.applicant_name} className="w-full py-3 rounded-xl bg-[#01696F] hover:bg-[#0C4E54] text-white text-sm font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">

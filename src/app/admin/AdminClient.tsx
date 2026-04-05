@@ -47,8 +47,7 @@ export default function AdminClient() {
       <nav className="glass-strong sticky top-0 z-30 border-b border-black/[0.04] px-6 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/icon.png" alt="Permit Tracer" className="w-8 h-8 rounded-lg object-contain"/>
-            <span className="text-[#1D1D1F] font-semibold tracking-tight">Permit Tracer</span>
+            <img src="/logo.png" alt="Permit Tracer" className="h-7 object-contain"/>
             <span className="text-[#A1A1A6] text-sm ml-1">/ Admin</span>
           </div>
           <a href="/dashboard" className="text-[#6E6E73] text-sm hover:text-[#1D1D1F] transition-colors">Back to Dashboard</a>

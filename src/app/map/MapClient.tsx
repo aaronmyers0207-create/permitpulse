@@ -141,8 +141,7 @@ export default function MapClient({ profile }: Props) {
       {/* Nav */}
       <nav className="glass-strong border-b border-black/[0.04] px-4 py-2.5 flex items-center justify-between z-20 shrink-0">
         <div className="flex items-center gap-3">
-          <img src="/icon.png" alt="Permit Tracer" className="w-7 h-7 rounded-lg object-contain"/>
-          <span className="text-[#1D1D1F] font-semibold tracking-tight text-sm">Permit Tracer</span>
+          <img src="/logo.png" alt="Permit Tracer" className="h-7 object-contain"/>
           <span className="text-[#A1A1A6] text-xs">/ Map</span>
         </div>
         <div className="flex items-center gap-3">
