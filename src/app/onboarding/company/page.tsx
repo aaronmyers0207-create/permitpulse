@@ -32,7 +32,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-xl">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2.5 mb-6">
-            <img src="/logo.png" alt="Permit Tracer" className="h-10 object-contain"/>
+            <img src="/logo.png" alt="Permit Tracer" className="h-16 object-contain"/>
           </div>
           <div className="flex items-center justify-center gap-2 mb-6">
             {[1, 2, 3].map((s) => (
