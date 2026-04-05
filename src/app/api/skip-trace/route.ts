@@ -81,6 +81,8 @@ export async function POST(request: NextRequest) {
     formData.append("city_column", "city");
     formData.append("state_column", "state");
     formData.append("mail_address_column", "address");
+    formData.append("mail_city_column", "city");
+    formData.append("mail_state_column", "state");
 
     const res = await fetch("https://tracerfy.com/v1/api/trace/", {
       method: "POST",
