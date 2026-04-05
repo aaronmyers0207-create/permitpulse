@@ -100,7 +100,18 @@ export default function MapClient({ profile }: Props) {
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: "raster",
+            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+            tileSize: 256,
+            attribution: "&copy; OpenStreetMap",
+          },
+        },
+        layers: [{ id: "osm", type: "raster", source: "osm" }],
+      },
       center: [-97.5, 38.5], // center of US
       zoom: 4,
       maxZoom: 18,
@@ -137,7 +148,7 @@ export default function MapClient({ profile }: Props) {
   const sc = selectedPermit ? scorePermit(selectedPermit, industry) : null;
 
   return (
-    <div className="h-screen flex flex-col">
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Nav */}
       <nav className="glass-strong border-b border-black/[0.04] px-4 py-2.5 flex items-center justify-between z-20 shrink-0">
         <div className="flex items-center gap-3">
@@ -174,8 +185,8 @@ export default function MapClient({ profile }: Props) {
       </div>
 
       {/* Map */}
-      <div className="flex-1 relative">
-        <div ref={mapContainer} className="absolute inset-0"/>
+      <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+        <div ref={mapContainer} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%" }}/>
 
         {/* Selected permit panel */}
         {selectedPermit && sc && (
