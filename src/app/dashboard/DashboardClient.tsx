@@ -175,17 +175,33 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
           </div>
         )}
 
-        {/* Mode toggle + title */}
-        <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-          <div>
-            <h1 className="text-[#1D1D1F] text-xl font-bold tracking-tight">{mode==="new"?"Fresh Leads":mode==="replacement"?"Replacement Opportunities":"Upsell Opportunities"}</h1>
-            <p className="text-[#6E6E73] text-sm">{total.toLocaleString()} permits &middot; {starredCount} saved &middot; Page {page}/{totalPages||1}</p>
+        {/* Hero header */}
+        <div className="bg-white/70 backdrop-blur-xl border border-black/[0.04] rounded-2xl shadow-sm mb-5 overflow-hidden">
+          <div className="px-6 py-5 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-[#1D1D1F] text-2xl font-bold tracking-tight">
+                  {mode==="new"?"Fresh Leads":mode==="replacement"?"Replacement Ready":mode==="upsell"?"Upsell Ready":"Traced Leads"}
+                </h1>
+                <span className="px-2.5 py-1 rounded-lg bg-[#01696F]/[0.08] text-[#01696F] text-sm font-bold font-mono">{total.toLocaleString()}</span>
+              </div>
+              <p className="text-[#6E6E73] text-sm">
+                {industry ? `${industry.icon} ${industry.label} priority` : "All trades"} &middot; {starredCount} saved &middot; Page {page} of {totalPages||1}
+              </p>
+            </div>
+            <div className="inline-flex bg-[#F7F6F2] border border-black/[0.06] rounded-xl p-1">
+              <button onClick={() => { setMode("new"); setActiveUpsell(null); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="new"?"bg-[#01696F] text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Fresh</button>
+              <button onClick={() => { setMode("replacement"); setActiveUpsell(null); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="replacement"?"bg-amber-500 text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Replace</button>
+              {upsells.length > 0 && <button onClick={() => { setMode("upsell"); if (!activeUpsell && upsells[0]) setActiveUpsell(upsells[0]); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="upsell"?"bg-purple-500 text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Upsell</button>}
+              <button onClick={async () => { setMode("traced"); setTracedLoading(true); try { const r = await fetch("/api/permits/traced"); const d = await r.json(); setTracedPermits(d.permits || []); } catch {} setTracedLoading(false); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="traced"?"bg-[#01696F] text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Traced</button>
+            </div>
           </div>
-          <div className="inline-flex bg-white/70 backdrop-blur-xl border border-black/[0.06] rounded-xl p-1 shadow-sm">
-            <button onClick={() => { setMode("new"); setActiveUpsell(null); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="new"?"bg-[#01696F] text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Fresh</button>
-            <button onClick={() => { setMode("replacement"); setActiveUpsell(null); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="replacement"?"bg-amber-500 text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Replace</button>
-            {upsells.length > 0 && <button onClick={() => { setMode("upsell"); if (!activeUpsell && upsells[0]) setActiveUpsell(upsells[0]); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="upsell"?"bg-purple-500 text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Upsell</button>}
-            <button onClick={async () => { setMode("traced"); setTracedLoading(true); try { const r = await fetch("/api/permits/traced"); const d = await r.json(); setTracedPermits(d.permits || []); } catch {} setTracedLoading(false); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="traced"?"bg-[#01696F] text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Traced</button>
+          {/* Quick stats bar */}
+          <div className="border-t border-black/[0.04] px-6 py-2.5 flex items-center gap-6 text-xs">
+            <span className="text-[#6E6E73]">🔥 <span className="font-semibold text-[#1D1D1F]">{scoredPermits.filter((p: any) => p._score.temp === "hot").length}</span> hot</span>
+            <span className="text-[#6E6E73]">🟢 <span className="font-semibold text-[#1D1D1F]">{scoredPermits.filter((p: any) => p._score.temp === "warm").length}</span> warm</span>
+            <span className="text-[#6E6E73]">📱 <span className="font-semibold text-[#1D1D1F]">{permits.filter((p: any) => p.skip_trace_data?.persons?.length > 0).length}</span> traced</span>
+            <span className="text-[#6E6E73]">⭐ <span className="font-semibold text-[#1D1D1F]">{starredCount}</span> saved</span>
           </div>
         </div>
 
