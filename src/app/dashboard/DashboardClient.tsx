@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { INDUSTRY_MAP, COVERED_STATES } from "@/lib/industries";
 import { getUserTier } from "@/lib/tiers";
-import { CYCLE_MAP, getUpsellsForIndustry, type UpsellOpportunity } from "@/lib/prospecting";
+import { CYCLE_MAP, getUpsellsForIndustry, getLifespanInfo, type UpsellOpportunity } from "@/lib/prospecting";
 import { scorePermit, LEAD_STATUSES, STATUS_MAP, type LeadScore } from "@/lib/scoring";
 
 /* ── Category config ─────────────────────────────── */
@@ -336,6 +336,24 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                           {p.applicant_name && <span className="text-[#6E6E73] flex items-center gap-1"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>{p.applicant_name}</span>}
                           {p.contractor_name && <span className="text-[#A1A1A6] flex items-center gap-1"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>{p.contractor_name}</span>}
                         </div>
+                        {/* Lifespan bar for replacement mode */}
+                        {mode === "replacement" && (() => {
+                          const info = getLifespanInfo(p.category, p.filed_date);
+                          if (!info) return null;
+                          return (
+                            <div className="mt-1.5 px-2.5 py-2 rounded-lg bg-amber-50/80 border border-amber-200/40">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[#1D1D1F] text-xs font-semibold">{CAT[p.category]?.label || p.category} installed {info.age}yr ago</span>
+                                <span className={`text-[10px] font-medium ${info.status === "critical" ? "text-red-600" : info.status === "aging" ? "text-amber-600" : "text-green-600"}`}>
+                                  {info.pct}% lifespan
+                                </span>
+                              </div>
+                              <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                                <div className={`h-full rounded-full transition-all ${info.status === "critical" ? "bg-red-500" : info.status === "aging" ? "bg-amber-500" : "bg-green-500"}`} style={{ width: `${info.pct}%` }}/>
+                              </div>
+                            </div>
+                          );
+                        })()}
                         {/* Show traced contact inline */}
                         {p.skip_trace_data?.persons?.[0] && (
                           <div className="flex items-center gap-3 mt-1 px-2.5 py-1.5 rounded-lg bg-[#01696F]/[0.04] border border-[#01696F]/10">
@@ -410,6 +428,30 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                   {selectedPermit.estimated_value && <p className="text-[#01696F] text-2xl font-bold font-mono mt-2">${Number(selectedPermit.estimated_value).toLocaleString()}</p>}
                   <div className="flex items-center gap-2 mt-3"><span className={`px-2 py-0.5 rounded-md text-xs font-medium border ${c.bg}`}>{c.label}</span><span className={`w-2 h-2 rounded-full ${freshnessColor(selectedPermit.filed_date)}`}/><span className="text-xs text-[#A1A1A6]">{daysAgo(selectedPermit.filed_date)} &middot; {selectedPermit.filed_date}</span></div>
                 </div>
+
+                {/* Lifespan bar in drawer */}
+                {(() => {
+                  const info = getLifespanInfo(selectedPermit.category, selectedPermit.filed_date);
+                  if (!info) return null;
+                  return (
+                    <div className="bg-gradient-to-r from-amber-50/80 to-amber-50/40 border border-amber-200/40 rounded-2xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">💡</span>
+                        <span className="text-[#1D1D1F] text-sm font-bold">{CAT[selectedPermit.category]?.label || selectedPermit.category} installed in {new Date(selectedPermit.filed_date).getFullYear()}</span>
+                      </div>
+                      <p className={`text-sm font-medium mb-3 ${info.status === "critical" ? "text-red-600" : "text-amber-600"}`}>
+                        {info.age} years old — {info.status === "critical" ? "past expected lifespan" : info.status === "aging" ? "approaching end of life" : "aging"}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2.5 rounded-full bg-gray-200 overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${info.status === "critical" ? "bg-red-500" : info.status === "aging" ? "bg-amber-500" : "bg-green-500"}`} style={{ width: `${info.pct}%` }}/>
+                        </div>
+                        <span className="text-xs font-bold text-[#1D1D1F]">{info.pct}%</span>
+                      </div>
+                      <p className="text-[#A1A1A6] text-xs mt-2">Expected lifespan: {info.lifespan} years</p>
+                    </div>
+                  );
+                })()}
 
                 {/* People */}
                 {selectedPermit.applicant_name && (

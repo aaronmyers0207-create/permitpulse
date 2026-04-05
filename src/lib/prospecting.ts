@@ -89,6 +89,19 @@ export function getUpsellsForIndustry(industryId: string): UpsellOpportunity[] {
   return UPSELL_OPPORTUNITIES.filter((u) => u.forIndustry === industryId);
 }
 
+/** Calculate system age and lifespan percentage for a permit */
+export function getLifespanInfo(category: string, filedDate: string): { age: number; lifespan: number; pct: number; status: string } | null {
+  const cycle = CYCLE_MAP[category];
+  if (!cycle || !filedDate) return null;
+  const age = Math.floor((Date.now() - new Date(filedDate).getTime()) / (365.25 * 86400000));
+  if (age < 0) return null;
+  const pct = Math.min(100, Math.round((age / cycle.lifespan) * 100));
+  let status = "good";
+  if (pct >= 80) status = "critical";
+  else if (pct >= 50) status = "aging";
+  return { age, lifespan: cycle.lifespan, pct, status };
+}
+
 export function getReplacementDateRange(category: string): { from: string; to: string } | null {
   const cycle = CYCLE_MAP[category];
   if (!cycle) return null;
