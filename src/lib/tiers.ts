@@ -31,10 +31,10 @@ export const TIERS: Tier[] = [
     name: "Free",
     price: 0,
     permitLimit: 100,
-    skipTraceLimit: 10,
+    skipTraceLimit: 3,
     features: [
       "100 permit records",
-      "10 skip traces / month",
+      "3 skip traces / month",
       "1 state",
       "Basic filters",
       "CSV export (100 rows)",
