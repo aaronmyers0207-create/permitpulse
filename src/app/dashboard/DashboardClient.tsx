@@ -292,6 +292,7 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                           <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${c.bg}`}>{c.label}</span>
                           {sc.temp === "hot" && <span className="px-1.5 py-0.5 rounded-md bg-red-50 text-red-600 text-[11px] font-medium">🔥 Hot</span>}
                           {val >= 100000 && <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[11px] font-medium">💰 High</span>}
+                          {p.skip_trace_data?.persons?.length > 0 && <span className="px-1.5 py-0.5 rounded-md bg-[#01696F]/10 text-[#01696F] text-[11px] font-medium">📱 Traced</span>}
                           <div className={`w-2 h-2 rounded-full ${freshnessColor(p.filed_date)}`}/>
                           <span className="text-[11px] text-[#A1A1A6]">{daysAgo(p.filed_date)}</span>
                           {/* Status pill */}
@@ -318,6 +319,13 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                           {p.applicant_name && <span className="text-[#6E6E73] flex items-center gap-1"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>{p.applicant_name}</span>}
                           {p.contractor_name && <span className="text-[#A1A1A6] flex items-center gap-1"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>{p.contractor_name}</span>}
                         </div>
+                        {/* Show traced contact inline */}
+                        {p.skip_trace_data?.persons?.[0] && (
+                          <div className="flex items-center gap-3 mt-1 px-2.5 py-1.5 rounded-lg bg-[#01696F]/[0.04] border border-[#01696F]/10">
+                            <span className="text-[#1D1D1F] text-xs font-semibold">{p.skip_trace_data.persons[0].name}</span>
+                            {p.skip_trace_data.persons[0].phones?.[0] && <span className="text-[#01696F] text-xs font-mono">{p.skip_trace_data.persons[0].phones[0].number.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3")}</span>}
+                          </div>
+                        )}
                       </div>
 
                       {/* Star + arrow */}
@@ -479,7 +487,7 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                       )}
                     </div>
                   ) : (
-                    <button onClick={async (e) => { e.stopPropagation(); const b=e.currentTarget; b.disabled=true; b.textContent="Tracing..."; try { const r=await fetch("/api/skip-trace",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({permitId:selectedPermit.id})}); const d=await r.json(); if(d.ok){setSelectedPermit({...selectedPermit,skip_trace_data:d.data});b.textContent="Done";}else{alert(d.error);b.disabled=false;b.textContent="Skip Trace Owner";}}catch{b.disabled=false;b.textContent="Skip Trace Owner";}}}
+                    <button onClick={async (e) => { e.stopPropagation(); const b=e.currentTarget; b.disabled=true; b.textContent="Tracing..."; try { const r=await fetch("/api/skip-trace",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({permitId:selectedPermit.id})}); const d=await r.json(); if(d.ok){setSelectedPermit({...selectedPermit,skip_trace_data:d.data}); setPermits(prev => prev.map(p => p.id === selectedPermit.id ? {...p, skip_trace_data: d.data} : p)); b.textContent="Done";}else{alert(d.error);b.disabled=false;b.textContent="Skip Trace This Address";}}catch{b.disabled=false;b.textContent="Skip Trace This Address";}}}
                       disabled={!selectedPermit.address} className="w-full py-3 rounded-xl bg-[#01696F] hover:bg-[#0C4E54] text-white text-sm font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
                       Skip Trace This Address
                     </button>
