@@ -11,13 +11,16 @@ export default async function DashboardPage() {
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
   if (!profile) {
-    await supabase.from("profiles").upsert({ id: user.id, email: user.email, company_name: "", industry: "" });
+    // Create profile — use admin client to bypass RLS for initial creation
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const admin = createAdminClient();
+    await admin.from("profiles").upsert({ id: user.id, email: user.email, company_name: "", industry: "", tier: "free" });
     redirect("/onboarding/company");
   }
 
-  // If profile exists but onboarding isn't complete, redirect back
-  // Skip for admin accounts
-  if (profile.tier !== "admin" && (!profile.company_name || !profile.industry || !(profile.states as string[] | null)?.length)) {
+  // If onboarding isn't complete, redirect (skip for admin)
+  const needsOnboarding = !profile.company_name || !profile.industry;
+  if (needsOnboarding && profile.tier !== "admin") {
     redirect("/onboarding/company");
   }
 
