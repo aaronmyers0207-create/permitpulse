@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PermitPulse — Building Permit Intelligence",
+  title: "Permit Tracer — Building Permit Intelligence",
   description: "Real-time building permit data for lead generation. HVAC, roofing, electrical, plumbing, solar and more.",
 };
 

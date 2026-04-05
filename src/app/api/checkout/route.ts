@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
             currency: "usd",
             recurring: { interval: "month" },
             product_data: {
-              name: `PermitPulse ${tier.name}`,
+              name: `Permit Tracer ${tier.name}`,
               description: tier.features.slice(0, 3).join(", "),
             },
             unit_amount: TIER_PRICES[tierId],

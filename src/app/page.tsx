@@ -19,8 +19,8 @@ export default async function Home() {
       <nav className="relative z-10 px-6 py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#01696F] flex items-center justify-center text-white font-bold text-sm">P</div>
-            <span className="text-white font-semibold tracking-tight text-lg">PermitPulse</span>
+            <img src="/icon.png" alt="Permit Tracer" className="w-8 h-8 rounded-xl object-contain"/>
+            <span className="text-white font-semibold tracking-tight text-lg">Permit Tracer</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/login" className="text-gray-400 text-sm hover:text-white transition-colors">Login</Link>
@@ -255,7 +255,7 @@ export default async function Home() {
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/[0.06] px-6 py-6 text-center text-gray-600 text-xs">
-        PermitPulse &copy; {new Date().getFullYear()} &middot; Built for contractors who knock doors.
+        Permit Tracer &copy; {new Date().getFullYear()} &middot; Built for contractors who knock doors.
       </footer>
     </div>
   );

@@ -1,5 +1,5 @@
 /**
- * Subscription tiers for Permit Pulse.
+ * Subscription tiers for Permit Tracer.
  *
  * Limits are enforced server-side in the API routes.
  */

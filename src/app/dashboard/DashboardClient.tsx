@@ -146,8 +146,8 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
       <nav className="glass-strong sticky top-0 z-30 border-b border-black/[0.04] px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#01696F] flex items-center justify-center text-white font-bold text-sm shadow-sm">P</div>
-            <span className="text-[#1D1D1F] font-semibold tracking-tight">PermitPulse</span>
+            <img src="/icon.png" alt="Permit Tracer" className="w-8 h-8 rounded-lg object-contain"/>
+            <span className="text-[#1D1D1F] font-semibold tracking-tight">Permit Tracer</span>
             {industry && <span className="hidden sm:inline-block ml-2 px-2.5 py-0.5 rounded-full bg-[#01696F]/[0.06] text-[#01696F] text-xs font-medium">{industry.icon} {industry.label}</span>}
           </div>
           <div className="flex items-center gap-4">

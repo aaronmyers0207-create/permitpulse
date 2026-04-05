@@ -32,8 +32,8 @@ export default function OnboardingPage() {
       <div className="w-full max-w-xl">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2.5 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-[#01696F] flex items-center justify-center text-white font-bold text-lg shadow-sm">P</div>
-            <span className="text-[#1D1D1F] text-2xl font-semibold tracking-tight">PermitPulse</span>
+            <img src="/icon.png" alt="Permit Tracer" className="w-10 h-10 rounded-xl object-contain"/>
+            <span className="text-[#1D1D1F] text-2xl font-semibold tracking-tight">Permit Tracer</span>
           </div>
           <div className="flex items-center justify-center gap-2 mb-6">
             {[1, 2, 3].map((s) => (

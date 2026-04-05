@@ -55,7 +55,7 @@ export default function OnboardingTerritoryPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-6">
             <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center text-white font-bold text-xl">P</div>
-            <span className="text-white text-2xl font-semibold tracking-tight">PermitPulse</span>
+            <span className="text-white text-2xl font-semibold tracking-tight">Permit Tracer</span>
           </div>
           <h1 className="text-white text-2xl font-bold mb-2">Pick your territory</h1>
           <p className="text-zinc-400 text-sm">Select up to {maxZips} zip codes to monitor. Step 2 of 3.</p>
