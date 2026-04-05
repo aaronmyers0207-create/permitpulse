@@ -153,7 +153,7 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
             <span className="hidden sm:inline text-[#6E6E73] text-sm">{profile?.company_name}</span>
             <a href="/map" className="text-[#01696F] text-sm font-medium hover:text-[#0C4E54] transition-colors">Map</a>
             <a href="/settings" className="text-[#A1A1A6] text-sm hover:text-[#1D1D1F] transition-colors">Settings</a>
-            <a href="/admin" className="text-[#A1A1A6] text-sm hover:text-[#1D1D1F] transition-colors">Admin</a>
+            {tier.id === "admin" && <a href="/admin" className="text-[#A1A1A6] text-sm hover:text-[#1D1D1F] transition-colors">Admin</a>}
             <button onClick={handleLogout} className="text-[#A1A1A6] text-sm hover:text-[#1D1D1F] transition-colors">Log out</button>
           </div>
         </div>

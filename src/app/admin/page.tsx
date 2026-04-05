@@ -8,5 +8,9 @@ export default async function AdminPage() {
 
   if (!user) redirect("/login");
 
+  // Admin-only access
+  const { data: profile } = await supabase.from("profiles").select("tier").eq("id", user.id).single();
+  if (profile?.tier !== "admin") redirect("/dashboard");
+
   return <AdminClient />;
 }
