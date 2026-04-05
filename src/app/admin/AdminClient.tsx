@@ -95,10 +95,29 @@ export default function AdminClient() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                 {statusBadge(status)}
                 <button onClick={() => syncOne(source.id)} disabled={status === "syncing" || syncAllRunning}
                   className="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 disabled:opacity-40 text-[#6E6E73] rounded-xl text-sm transition-colors shadow-sm">Sync</button>
+                {source.id === "orlando_fl" && (
+                  <div className="flex gap-1 mt-1">
+                    {["Solar","Roof","MEC","ELE","PLM","Pool"].map((wt) => (
+                      <button key={wt} onClick={async () => {
+                        setSyncStatus((p) => ({ ...p, [source.id]: "syncing" }));
+                        try {
+                          const res = await fetch("/api/admin/sync-targeted", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sourceId: source.id, worktypeFilter: wt, limit: 10000 }) });
+                          const data = await res.json();
+                          setSyncStatus((p) => ({ ...p, [source.id]: data.ok ? "done" : "error" }));
+                          setSyncResults((p) => ({ ...p, [source.id]: data.result }));
+                          fetchSources();
+                        } catch { setSyncStatus((p) => ({ ...p, [source.id]: "error" })); }
+                      }} disabled={status === "syncing"}
+                        className="px-2 py-1 bg-[#01696F]/[0.06] hover:bg-[#01696F]/10 border border-[#01696F]/15 text-[#01696F] rounded-lg text-[11px] font-medium transition-colors disabled:opacity-40">
+                        {wt}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           );})}
