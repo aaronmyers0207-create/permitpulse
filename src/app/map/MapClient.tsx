@@ -32,13 +32,16 @@ export default function MapClient({ profile }: Props) {
   // Fetch permits for current map bounds
   const fetchPermits = useCallback(async (map: maplibregl.Map) => {
     setLoading(true);
-    const bounds = map.getBounds();
-    const sw = bounds.getSouthWest();
-    const ne = bounds.getNorthEast();
-    const params = new URLSearchParams({
-      bounds: `${sw.lat},${sw.lng},${ne.lat},${ne.lng}`,
-      limit: "500",
-    });
+    const zoom = map.getZoom();
+    const params = new URLSearchParams({ limit: zoom < 8 ? "1000" : "500" });
+
+    // Only use bounds filter when zoomed in enough
+    if (zoom >= 6) {
+      const bounds = map.getBounds();
+      const sw = bounds.getSouthWest();
+      const ne = bounds.getNorthEast();
+      params.set("bounds", `${sw.lat},${sw.lng},${ne.lat},${ne.lng}`);
+    }
     if (filterCategory) params.set("category", filterCategory);
 
     try {
@@ -100,6 +103,7 @@ export default function MapClient({ profile }: Props) {
       style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
       center: [-97.5, 38.5], // center of US
       zoom: 4,
+      maxZoom: 18,
       attributionControl: false,
     });
 
