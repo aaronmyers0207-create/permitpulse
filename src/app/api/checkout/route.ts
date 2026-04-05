@@ -35,10 +35,15 @@ export async function POST(request: NextRequest) {
   if (!tier) return NextResponse.json({ error: "Unknown tier" }, { status: 400 });
 
   try {
-    const session = await stripe.checkout.sessions.create({
+    // Reuse existing Stripe customer if we have one
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const admin = createAdminClient();
+    const { data: profile } = await admin.from("profiles").select("stripe_customer_id").eq("id", user.id).single();
+
+    const sessionParams: any = {
       mode: "subscription",
       payment_method_types: ["card"],
-      customer_email: user.email ?? undefined,
+      ...(profile?.stripe_customer_id ? { customer: profile.stripe_customer_id } : { customer_email: user.email ?? undefined }),
       metadata: {
         user_id: user.id,
         tier_id: tierId,
@@ -59,7 +64,9 @@ export async function POST(request: NextRequest) {
       ],
       success_url: `${request.nextUrl.origin}/settings?upgraded=${tierId}`,
       cancel_url: `${request.nextUrl.origin}/settings`,
-    });
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return NextResponse.json({ url: session.url });
   } catch (err) {

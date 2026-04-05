@@ -173,6 +173,30 @@ export default function SettingsClient({ user, profile }: Props) {
               );
             })}
           </div>
+          {/* Manage subscription */}
+          {tier.id !== "free" && tier.id !== "admin" && (
+            <div className="mt-5 flex items-center justify-between bg-white/50 border border-black/[0.04] rounded-xl px-5 py-4">
+              <div>
+                <p className="text-[#1D1D1F] text-sm font-medium">Manage your subscription</p>
+                <p className="text-[#A1A1A6] text-xs">Update payment method, change plan, or cancel.</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/billing/portal", { method: "POST" });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                    else alert(data.error || "Failed to open billing portal");
+                  } catch { alert("Failed to open billing portal"); }
+                }}
+                className="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-[#6E6E73] text-sm rounded-xl shadow-sm transition-colors">
+                Manage Billing
+              </button>
+            </div>
+          )}
+          {tier.id === "free" && (
+            <p className="mt-4 text-[#A1A1A6] text-xs text-center">Upgrade to manage your subscription and billing.</p>
+          )}
         </section>
       </div>
     </div>
