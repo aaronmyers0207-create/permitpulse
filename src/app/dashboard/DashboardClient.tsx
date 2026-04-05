@@ -366,53 +366,62 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                 <div className="bg-gradient-to-br from-[#01696F]/[0.06] to-[#01696F]/[0.02] border border-[#01696F]/15 rounded-2xl p-5">
                   <p className="text-[#1D1D1F] font-semibold text-sm mb-1">Skip Trace</p>
                   <p className="text-[#6E6E73] text-xs mb-3">Get phone numbers, emails, and mailing address.</p>
-                  {selectedPermit.skip_trace_data && Object.keys(selectedPermit.skip_trace_data).length > 0 ? (
-                    <div className="space-y-2">
-                      {/* Phones */}
-                      {selectedPermit.skip_trace_data.phones?.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {selectedPermit.skip_trace_data.phones.map((ph: any, i: number) => (
-                            <div key={i} className="bg-white rounded-xl px-4 py-3 flex items-center justify-between shadow-sm border border-black/[0.04]">
-                              <div>
-                                <p className="text-[#1D1D1F] text-sm font-semibold font-mono">{ph.number}</p>
-                                <p className="text-[#A1A1A6] text-xs">{ph.type || "Phone"}{ph.dnc === "true" ? " · DNC" : ph.dnc === "false" ? " · Not on DNC" : ""}</p>
+                  {selectedPermit.skip_trace_data && (selectedPermit.skip_trace_data.persons?.length > 0 || selectedPermit.skip_trace_data.hit) ? (
+                    <div className="space-y-3">
+                      {selectedPermit.skip_trace_data.persons?.map((person: any, pi: number) => (
+                        <div key={pi} className="bg-white rounded-2xl border border-black/[0.04] shadow-sm overflow-hidden">
+                          {/* Person header */}
+                          <div className="px-4 py-3 border-b border-black/[0.04] flex items-center justify-between">
+                            <div>
+                              <p className="text-[#1D1D1F] text-sm font-bold">{person.name}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {person.age && <span className="text-[#6E6E73] text-xs">Age {person.age}</span>}
+                                {person.property_owner && <span className="text-[#01696F] text-[10px] font-medium bg-[#01696F]/10 px-1.5 py-0.5 rounded">Owner</span>}
+                                {person.deceased && <span className="text-red-500 text-[10px] font-medium bg-red-50 px-1.5 py-0.5 rounded">Deceased</span>}
+                                {person.litigator && <span className="text-amber-600 text-[10px] font-medium bg-amber-50 px-1.5 py-0.5 rounded">Litigator</span>}
                               </div>
-                              <a href={`tel:${ph.number}`} className="w-8 h-8 rounded-lg bg-[#01696F]/10 flex items-center justify-center">
-                                <svg className="w-4 h-4 text-[#01696F]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                              </a>
                             </div>
-                          ))}
-                        </div>
-                      ) : null}
-                      {/* Emails */}
-                      {selectedPermit.skip_trace_data.emails?.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {selectedPermit.skip_trace_data.emails.map((em: string, i: number) => (
-                            <div key={i} className="bg-white rounded-xl px-4 py-3 flex items-center justify-between shadow-sm border border-black/[0.04]">
-                              <div>
-                                <p className="text-[#1D1D1F] text-sm font-medium">{em}</p>
-                                <p className="text-[#A1A1A6] text-xs">Email</p>
-                              </div>
-                              <a href={`mailto:${em}`} className="w-8 h-8 rounded-lg bg-[#01696F]/10 flex items-center justify-center">
-                                <svg className="w-4 h-4 text-[#01696F]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                              </a>
+                          </div>
+                          {/* Phones */}
+                          {person.phones?.length > 0 && (
+                            <div className="divide-y divide-black/[0.03]">
+                              {person.phones.map((ph: any, i: number) => (
+                                <div key={i} className="px-4 py-2.5 flex items-center justify-between">
+                                  <div>
+                                    <p className="text-[#1D1D1F] text-sm font-semibold font-mono">{ph.number.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3")}</p>
+                                    <p className="text-[#A1A1A6] text-xs">{ph.type || "Phone"}{ph.dnc ? " \u00b7 \u26d4 DNC" : " \u00b7 \u2705 Not DNC"}</p>
+                                  </div>
+                                  <a href={`tel:${ph.number}`} className="w-9 h-9 rounded-xl bg-[#01696F] flex items-center justify-center shadow-sm">
+                                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                  </a>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      ) : null}
-                      {/* No results or still processing */}
-                      {(!selectedPermit.skip_trace_data.phones?.length && !selectedPermit.skip_trace_data.emails?.length) && (
-                        <div className="bg-white/80 rounded-xl px-4 py-3">
-                          <p className="text-amber-600 text-sm font-medium">{selectedPermit.skip_trace_data.status === "completed" ? "No contact info found" : "Processing..."}</p>
-                          <p className="text-[#A1A1A6] text-xs mt-1">Queue: {selectedPermit.skip_trace_data.queue_id}</p>
-                          {selectedPermit.skip_trace_data.status !== "completed" && (
-                            <button onClick={async () => {
-                              const r = await fetch("/api/skip-trace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ permitId: selectedPermit.id }) });
-                              const d = await r.json();
-                              if (d.ok) setSelectedPermit({ ...selectedPermit, skip_trace_data: d.data });
-                            }} className="mt-2 text-[#01696F] text-xs font-medium underline">Check for results</button>
+                          )}
+                          {/* Emails */}
+                          {person.emails?.length > 0 && (
+                            <div className="divide-y divide-black/[0.03]">
+                              {person.emails.map((em: string, i: number) => (
+                                <div key={i} className="px-4 py-2.5 flex items-center justify-between">
+                                  <div><p className="text-[#1D1D1F] text-sm">{em}</p><p className="text-[#A1A1A6] text-xs">Email</p></div>
+                                  <a href={`mailto:${em}`} className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-[#6E6E73]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {/* Mailing address */}
+                          {person.mailing_address && (
+                            <div className="px-4 py-2.5 border-t border-black/[0.03]">
+                              <p className="text-[#A1A1A6] text-[10px] uppercase tracking-wider">Mailing Address</p>
+                              <p className="text-[#6E6E73] text-xs">{person.mailing_address.street}, {person.mailing_address.city}, {person.mailing_address.state} {person.mailing_address.zip}</p>
+                            </div>
                           )}
                         </div>
+                      ))}
+                      {selectedPermit.skip_trace_data.persons?.length === 0 && (
+                        <p className="text-amber-600 text-sm">No contact info found for this address.</p>
                       )}
                     </div>
                   ) : (
