@@ -366,7 +366,7 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                 <div className="bg-gradient-to-br from-[#01696F]/[0.06] to-[#01696F]/[0.02] border border-[#01696F]/15 rounded-2xl p-5">
                   <p className="text-[#1D1D1F] font-semibold text-sm mb-1">Skip Trace</p>
                   <p className="text-[#6E6E73] text-xs mb-3">Get phone numbers, emails, and mailing address.</p>
-                  {selectedPermit.skip_trace_data && (selectedPermit.skip_trace_data.persons?.length > 0 || selectedPermit.skip_trace_data.hit) ? (
+                  {selectedPermit.skip_trace_data && selectedPermit.skip_trace_data.status && selectedPermit.skip_trace_data.status !== "pending" ? (
                     <div className="space-y-3">
                       {selectedPermit.skip_trace_data.persons?.map((person: any, pi: number) => (
                         <div key={pi} className="bg-white rounded-2xl border border-black/[0.04] shadow-sm overflow-hidden">
@@ -420,8 +420,15 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                           )}
                         </div>
                       ))}
-                      {selectedPermit.skip_trace_data.persons?.length === 0 && (
-                        <p className="text-amber-600 text-sm">No contact info found for this address.</p>
+                      {(!selectedPermit.skip_trace_data.persons?.length) && (
+                        <div className="bg-amber-50 rounded-xl px-4 py-3 border border-amber-200/40">
+                          <p className="text-amber-700 text-sm font-medium">No results found</p>
+                          <p className="text-amber-600/70 text-xs mt-0.5">This address may be an intersection, subdivision name, or commercial property. Try a residential street address for best results.</p>
+                          <button onClick={async () => {
+                            await fetch("/api/permit-status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ permitId: selectedPermit.id }) });
+                            setSelectedPermit({ ...selectedPermit, skip_trace_data: null });
+                          }} className="mt-2 text-[#01696F] text-xs font-medium underline">Clear and retry</button>
+                        </div>
                       )}
                     </div>
                   ) : (
