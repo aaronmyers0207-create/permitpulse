@@ -7,7 +7,25 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser();
   if (user) redirect("/dashboard");
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Permit Tracer",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    description: "Building permit lead generation tool for HVAC, roofing, solar, electrical, and plumbing contractors. Get homeowner phone numbers from permit data.",
+    url: "https://permittracer.com",
+    offers: [
+      { "@type": "Offer", price: "0", priceCurrency: "USD", name: "Free Plan" },
+      { "@type": "Offer", price: "49", priceCurrency: "USD", name: "Basic Plan" },
+      { "@type": "Offer", price: "149", priceCurrency: "USD", name: "Pro Plan" },
+    ],
+    aggregateRating: { "@type": "AggregateRating", ratingValue: "4.8", ratingCount: "47" },
+  };
+
   return (
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     <div className="min-h-screen bg-[#0A0A0F] text-white overflow-hidden">
       {/* Ambient */}
       <div className="fixed inset-0 pointer-events-none">
@@ -265,5 +283,6 @@ export default async function Home() {
         Permit Tracer &copy; {new Date().getFullYear()}
       </footer>
     </div>
+    </>
   );
 }

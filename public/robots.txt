@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /settings
+Disallow: /map
+Disallow: /api/
+Disallow: /onboarding
+
+Sitemap: https://permittracer.com/sitemap.xml
