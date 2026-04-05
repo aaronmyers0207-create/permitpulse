@@ -180,8 +180,14 @@ export default function MapClient({ profile }: Props) {
         </div>
 
         <div className="flex-1"/>
+        {/* Quick jump buttons */}
+        <div className="flex gap-1">
+          {[{label:"Seattle",lat:47.6,lng:-122.33,z:11},{label:"Austin",lat:30.27,lng:-97.74,z:11},{label:"Chicago",lat:41.88,lng:-87.63,z:11},{label:"SF/Marin",lat:37.85,lng:-122.45,z:10}].map(c=>(
+            <button key={c.label} onClick={()=>{mapRef.current?.flyTo({center:[c.lng,c.lat],zoom:c.z})}} className="px-2 py-1 bg-white border border-gray-200 rounded-lg text-[10px] text-[#6E6E73] hover:bg-gray-50 shadow-sm">{c.label}</button>
+          ))}
+        </div>
         {loading && <div className="w-4 h-4 border-2 border-[#01696F]/30 border-t-[#01696F] rounded-full animate-spin"/>}
-        <span className="text-[#A1A1A6] text-xs">{permitCount} permits in view</span>
+        <span className="text-[#A1A1A6] text-xs">{permitCount} pins{permitCount === 0 ? " — zoom to a city with coordinates" : ""}  </span>
       </div>
 
       {/* Map */}

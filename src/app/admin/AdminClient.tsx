@@ -65,6 +65,16 @@ export default function AdminClient() {
                 <option value={100}>100</option><option value={500}>500</option><option value={1000}>1,000</option><option value={2000}>2,000</option><option value={5000}>5,000</option>
               </select>
             </label>
+            <button onClick={async () => {
+              const btn = document.getElementById('geocode-btn') as HTMLButtonElement;
+              if (btn) { btn.disabled = true; btn.textContent = 'Geocoding...'; }
+              try {
+                const res = await fetch('/api/admin/geocode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limit: 300 }) });
+                const data = await res.json();
+                alert(`Geocoded ${data.result?.geocoded || 0} of ${data.result?.total || 0} permits (${data.result?.failed || 0} failed)`);
+              } catch { alert('Geocode failed'); }
+              if (btn) { btn.disabled = false; btn.textContent = 'Geocode'; }
+            }} id="geocode-btn" className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium transition-colors shadow-sm">Geocode</button>
             <button onClick={syncAll} disabled={syncAllRunning} className="px-5 py-2 bg-[#01696F] hover:bg-[#0C4E54] disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl text-sm font-medium transition-colors shadow-sm">{syncAllRunning ? "Syncing All..." : "Sync All Sources"}</button>
           </div>
         </div>
