@@ -16,7 +16,8 @@ export default async function DashboardPage() {
   }
 
   // If profile exists but onboarding isn't complete, redirect back
-  if (!profile.company_name || !profile.industry || !profile.states?.length) {
+  // Skip for admin accounts
+  if (profile.tier !== "admin" && (!profile.company_name || !profile.industry || !(profile.states as string[] | null)?.length)) {
     redirect("/onboarding/company");
   }
 
