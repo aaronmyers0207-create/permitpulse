@@ -145,18 +145,19 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
   return (
     <div className="min-h-screen" onClick={() => setStatusDropdown(null)}>
       {/* Nav */}
-      <nav className="glass-strong sticky top-0 z-30 border-b border-black/[0.04] px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Permit Tracer" className="h-7 object-contain"/>
-            {industry && <span className="hidden sm:inline-block ml-2 px-2.5 py-0.5 rounded-full bg-[#01696F]/[0.06] text-[#01696F] text-xs font-medium">{industry.icon} {industry.label}</span>}
-          </div>
+      <nav className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-black/[0.06] px-6 py-0">
+        <div className="max-w-7xl mx-auto flex items-center justify-between h-14">
           <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-[#6E6E73] text-sm">{profile?.company_name}</span>
-            <a href="/map" className="text-[#01696F] text-sm font-medium hover:text-[#0C4E54] transition-colors">Map</a>
-            <a href="/settings" className="text-[#A1A1A6] text-sm hover:text-[#1D1D1F] transition-colors">Settings</a>
-            {tier.id === "admin" && <a href="/admin" className="text-[#A1A1A6] text-sm hover:text-[#1D1D1F] transition-colors">Admin</a>}
-            <button onClick={handleLogout} className="text-[#A1A1A6] text-sm hover:text-[#1D1D1F] transition-colors">Log out</button>
+            <img src="/logo.png" alt="Permit Tracer" className="h-8 object-contain"/>
+            <div className="h-6 w-px bg-black/[0.08] hidden sm:block"/>
+            <a href="/dashboard" className="text-[#1D1D1F] text-sm font-medium">Leads</a>
+            <a href="/map" className="text-[#6E6E73] text-sm font-medium hover:text-[#1D1D1F] transition-colors">Map</a>
+          </div>
+          <div className="flex items-center gap-1">
+            {industry && <span className="hidden sm:inline-block px-3 py-1.5 rounded-lg bg-[#01696F]/[0.06] text-[#01696F] text-xs font-medium mr-2">{industry.icon} {industry.label}</span>}
+            <a href="/settings" className="px-3 py-1.5 rounded-lg text-[#6E6E73] text-sm hover:bg-black/[0.03] transition-colors">Settings</a>
+            {tier.id === "admin" && <a href="/admin" className="px-3 py-1.5 rounded-lg text-[#6E6E73] text-sm hover:bg-black/[0.03] transition-colors">Admin</a>}
+            <button onClick={handleLogout} className="px-3 py-1.5 rounded-lg text-[#A1A1A6] text-sm hover:bg-black/[0.03] transition-colors">Log out</button>
           </div>
         </div>
       </nav>
