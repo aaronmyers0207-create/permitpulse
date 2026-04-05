@@ -62,7 +62,9 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
 
   const industry = INDUSTRY_MAP[profile?.industry] || null;
   const tier = getUserTier(profile);
-  const [mode, setMode] = useState<"new" | "replacement" | "upsell">("new");
+  const [mode, setMode] = useState<"new" | "replacement" | "upsell" | "traced">("new");
+  const [tracedPermits, setTracedPermits] = useState<any[]>([]);
+  const [tracedLoading, setTracedLoading] = useState(false);
   const [activeUpsell, setActiveUpsell] = useState<UpsellOpportunity | null>(null);
   const upsells = industry ? getUpsellsForIndustry(industry.id) : [];
   const [filterCategory, setFilterCategory] = useState("");
@@ -183,6 +185,7 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
             <button onClick={() => { setMode("new"); setActiveUpsell(null); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="new"?"bg-[#01696F] text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Fresh</button>
             <button onClick={() => { setMode("replacement"); setActiveUpsell(null); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="replacement"?"bg-amber-500 text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Replace</button>
             {upsells.length > 0 && <button onClick={() => { setMode("upsell"); if (!activeUpsell && upsells[0]) setActiveUpsell(upsells[0]); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="upsell"?"bg-purple-500 text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Upsell</button>}
+            <button onClick={async () => { setMode("traced"); setTracedLoading(true); try { const r = await fetch("/api/permits/traced"); const d = await r.json(); setTracedPermits(d.permits || []); } catch {} setTracedLoading(false); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${mode==="traced"?"bg-[#01696F] text-white shadow-sm":"text-[#6E6E73] hover:text-[#1D1D1F]"}`}>Traced</button>
           </div>
         </div>
 
@@ -212,8 +215,52 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
           <button onClick={exportCSV} className="px-4 py-2 bg-white border border-gray-200 text-[#6E6E73] rounded-xl text-sm shadow-sm hover:bg-gray-50">Export</button>
         </div>
 
+        {/* Traced leads view */}
+        {mode === "traced" ? (
+          tracedLoading ? (
+            <div className="flex items-center justify-center py-20"><div className="w-7 h-7 border-2 border-[#01696F]/30 border-t-[#01696F] rounded-full animate-spin"/></div>
+          ) : tracedPermits.length === 0 ? (
+            <div className="text-center py-20"><div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4"><span className="text-2xl">📱</span></div><h3 className="text-[#1D1D1F] text-lg font-semibold mb-1">No traced leads yet</h3><p className="text-[#6E6E73] text-sm">Skip trace a permit to see results here.</p></div>
+          ) : (
+            <div className="grid gap-2.5">
+              {tracedPermits.map((p: any) => {
+                const persons = p.skip_trace_data?.persons || [];
+                const firstPerson = persons[0];
+                const isHit = p.skip_trace_data?.hit;
+                return (
+                  <div key={p.id} onClick={() => { setSelectedPermit(p); setDrawerNotes(viewsMap[p.id]?.notes || ""); }}
+                    className={`bg-white/70 backdrop-blur-xl border rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer ${isHit ? "border-[#01696F]/20" : "border-black/[0.04] opacity-60"}`}>
+                    <div className="px-4 py-3.5 flex items-start gap-3">
+                      <div className={`w-3 h-3 rounded-full mt-1.5 ${isHit ? "bg-[#01696F]" : "bg-gray-300"}`}/>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-[#1D1D1F] text-sm font-semibold truncate">{p.address}</h3>
+                        <p className="text-[#A1A1A6] text-xs">{p.city}, {p.state}</p>
+                        {firstPerson ? (
+                          <div className="mt-2 space-y-1">
+                            <p className="text-[#1D1D1F] text-sm font-bold">{firstPerson.name}</p>
+                            {firstPerson.phones?.[0] && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-[#01696F] text-sm font-mono font-semibold">{firstPerson.phones[0].number.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3")}</span>
+                                <span className="text-[#A1A1A6] text-[10px]">{firstPerson.phones[0].type}{firstPerson.phones[0].dnc ? " \u00b7 DNC" : ""}</span>
+                              </div>
+                            )}
+                            {firstPerson.emails?.[0] && <p className="text-[#6E6E73] text-xs">{firstPerson.emails[0]}</p>}
+                          </div>
+                        ) : (
+                          <p className="text-amber-600 text-xs mt-1">No results</p>
+                        )}
+                      </div>
+                      <svg className="w-4 h-4 text-[#A1A1A6] mt-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        ) : null}
+
         {/* Lead cards */}
-        {loading ? (<div className="flex items-center justify-center py-20"><div className="w-7 h-7 border-2 border-[#01696F]/30 border-t-[#01696F] rounded-full animate-spin"/></div>
+        {mode === "traced" ? null : loading ? (<div className="flex items-center justify-center py-20"><div className="w-7 h-7 border-2 border-[#01696F]/30 border-t-[#01696F] rounded-full animate-spin"/></div>
         ) : filteredPermits.length===0 ? (
           <div className="text-center py-20"><div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4"><span className="text-2xl">📋</span></div><h3 className="text-[#1D1D1F] text-lg font-semibold mb-1">No leads found</h3><p className="text-[#6E6E73] text-sm">{total===0?<>Sync data from <a href="/admin" className="text-[#01696F] underline">Admin</a>.</>:"Adjust your filters."}</p></div>
         ) : (
