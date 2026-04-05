@@ -236,9 +236,9 @@ export default function MapClient({ profile }: Props) {
                   if (data.ok) alert("Skip trace submitted — check results in the dashboard");
                   else alert(data.error || "Failed");
                 }}
-                disabled={!selectedPermit.applicant_name}
+                disabled={!selectedPermit.address}
                 className="w-full py-2 rounded-xl bg-[#01696F] hover:bg-[#0C4E54] text-white text-xs font-medium shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                {selectedPermit.applicant_name ? "Skip Trace Owner" : "No owner name"}
+                Skip Trace This Address
               </button>
             </div>
           </div>

@@ -417,8 +417,8 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                     </div>
                   ) : (
                     <button onClick={async (e) => { e.stopPropagation(); const b=e.currentTarget; b.disabled=true; b.textContent="Tracing..."; try { const r=await fetch("/api/skip-trace",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({permitId:selectedPermit.id})}); const d=await r.json(); if(d.ok){setSelectedPermit({...selectedPermit,skip_trace_data:d.data});b.textContent="Done";}else{alert(d.error);b.disabled=false;b.textContent="Skip Trace Owner";}}catch{b.disabled=false;b.textContent="Skip Trace Owner";}}}
-                      disabled={!selectedPermit.applicant_name} className="w-full py-3 rounded-xl bg-[#01696F] hover:bg-[#0C4E54] text-white text-sm font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
-                      {selectedPermit.applicant_name ? "Skip Trace Owner" : "No owner name available"}
+                      disabled={!selectedPermit.address} className="w-full py-3 rounded-xl bg-[#01696F] hover:bg-[#0C4E54] text-white text-sm font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                      Skip Trace This Address
                     </button>
                   )}
                 </div>

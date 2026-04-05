@@ -54,6 +54,9 @@ export async function POST(request: NextRequest) {
 
   if (!address) return NextResponse.json({ error: "No address available for skip trace" }, { status: 422 });
 
+  // Tracerfy traces by address — owner name is optional
+  // If no name, send empty first/last and let Tracerfy resolve by address
+
   try {
     // Step 1: Submit to Tracerfy
     const csvContent = `first_name,last_name,address,city,state,zip\n${firstName},${lastName},"${address}",${city},${state},${zip}`;
