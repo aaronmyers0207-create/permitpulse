@@ -19,7 +19,7 @@ export default async function Home() {
       <nav className="relative z-10 px-6 py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="Permit Tracer" className="h-7 object-contain brightness-0 invert"/>
+            <img src="/logo-white.png" alt="Permit Tracer" className="h-8 object-contain"/>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/login" className="text-gray-400 text-sm hover:text-white transition-colors">Login</Link>
