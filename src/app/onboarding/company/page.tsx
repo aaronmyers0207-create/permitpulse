@@ -8,6 +8,7 @@ import { INDUSTRIES } from "@/lib/industries";
 const COVERED_CITIES = [
   { city: "Orlando", state: "FL", source: "orlando_fl" },
   { city: "Gainesville", state: "FL", source: "gainesville_fl" },
+  { city: "Tampa", state: "FL", source: "tampa_fl" },
   { city: "Austin", state: "TX", source: "austin_tx" },
   { city: "Dallas", state: "TX", source: "dallas_tx" },
   { city: "Collin County", state: "TX", source: "collin_cad_tx" },
