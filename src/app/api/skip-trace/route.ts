@@ -111,6 +111,12 @@ export async function POST(request: NextRequest) {
     // Save to permit
     await admin.from("permits").update({ skip_trace_data: skipTraceData }).eq("id", permitId);
 
+    // Track which user traced this permit
+    await admin.from("permit_views").upsert(
+      { user_id: user.id, permit_id: permitId, starred: false, status: "new", notes: null, traced: true, traced_at: new Date().toISOString() },
+      { onConflict: "user_id,permit_id" }
+    );
+
     // Increment usage
     await admin.from("profiles").update({ skip_traces_used: (profile?.skip_traces_used || 0) + 1 }).eq("id", user.id);
 

@@ -1,31 +1,46 @@
 /**
  * GET /api/permits/traced
- * Returns permits that have been skip traced (have results).
+ * Returns permits that the CURRENT USER has skip traced.
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Use admin client since skip_trace_data was written by service role
   const admin = createAdminClient();
 
+  // Get permit IDs that this user has traced
+  const { data: views } = await admin
+    .from("permit_views")
+    .select("permit_id")
+    .eq("user_id", user.id)
+    .eq("traced", true)
+    .order("traced_at", { ascending: false });
+
+  if (!views || views.length === 0) {
+    return NextResponse.json({ permits: [] });
+  }
+
+  const permitIds = views.map((v) => v.permit_id);
+
+  // Fetch those permits with their skip trace data
   const { data: permits, error } = await admin
     .from("permits")
     .select("*")
-    .not("skip_trace_data", "eq", "{}")
-    .not("skip_trace_data", "is", null)
-    .order("updated_at", { ascending: false })
-    .limit(100);
+    .in("id", permitIds);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ permits: permits || [] });
+  // Sort by the order from permit_views (most recently traced first)
+  const orderMap = new Map(permitIds.map((id, i) => [id, i]));
+  const sorted = (permits || []).sort((a, b) => (orderMap.get(a.id) || 0) - (orderMap.get(b.id) || 0));
+
+  return NextResponse.json({ permits: sorted });
 }
