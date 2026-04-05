@@ -15,6 +15,11 @@ export default async function DashboardPage() {
     redirect("/onboarding/company");
   }
 
+  // If profile exists but onboarding isn't complete, redirect back
+  if (!profile.company_name || !profile.industry || !profile.states?.length) {
+    redirect("/onboarding/company");
+  }
+
   const tier = getUserTier(profile);
   const PAGE_SIZE = 50;
 
