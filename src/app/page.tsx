@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import LandingHeroForm from "@/components/LandingHeroForm";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -20,7 +21,6 @@ export default async function Home() {
       { "@type": "Offer", price: "49", priceCurrency: "USD", name: "Basic Plan" },
       { "@type": "Offer", price: "149", priceCurrency: "USD", name: "Pro Plan" },
     ],
-    aggregateRating: { "@type": "AggregateRating", ratingValue: "4.8", ratingCount: "47" },
   };
 
   return (
@@ -44,58 +44,61 @@ export default async function Home() {
         </div>
       </nav>
 
-      {/* Hero — show the outcome */}
-      <section className="relative z-10 px-6 pt-12 pb-20">
+      {/* Hero */}
+      <section className="relative z-10 px-6 pt-10 pb-20">
         <div className="max-w-5xl mx-auto">
-          {/* Social proof first */}
-          <div className="flex items-center gap-3 mb-8 justify-center">
-            <div className="flex -space-x-2">
-              {["bg-blue-500","bg-green-500","bg-amber-500","bg-rose-500"].map((c,i) => (
-                <div key={i} className={`w-8 h-8 rounded-full ${c} border-2 border-[#0A0A0F] flex items-center justify-center text-white text-xs font-bold`}>
-                  {["JM","SK","TR","AL"][i]}
-                </div>
-              ))}
-            </div>
-            <span className="text-gray-400 text-sm">Trusted by contractors in 9 states</span>
+
+          {/* FOMO ticker */}
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+            </span>
+            <span className="text-gray-400 text-sm">
+              <span className="text-white font-medium">47 new permits</span> filed in Florida in the last 24 hours
+            </span>
           </div>
 
-          <div className="text-center max-w-3xl mx-auto mb-12">
+          <div className="text-center max-w-3xl mx-auto mb-10">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.1] tracking-tight mb-5">
-              Every new permit is<br/>
-              <span className="text-[#01696F]">a door you should knock.</span>
+              Your competitor already<br/>
+              <span className="text-[#01696F]">called that homeowner.</span>
             </h1>
             <p className="text-gray-400 text-lg max-w-xl mx-auto mb-8 leading-relaxed">
-              Get the homeowner's name, phone number, and address the moment a building permit is filed in your area. Before your competition even knows about it.
+              Permit Tracer shows you every new roof, HVAC, and solar job filed in your area — with the homeowner's name and number — before anyone else knocks.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/signup" className="px-8 py-4 bg-[#01696F] hover:bg-[#0C4E54] text-white font-semibold rounded-xl transition-colors text-base shadow-lg shadow-[#01696F]/20">
-                Start Free — No Credit Card
-              </Link>
-            </div>
+
+            {/* Inline email capture */}
+            <LandingHeroForm />
+
+            <p className="text-gray-600 text-xs mt-3">No credit card required. Takes 30 seconds.</p>
           </div>
 
-          {/* Live demo card — THIS is what sells */}
+          {/* Live demo card */}
           <div className="max-w-lg mx-auto">
             <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/[0.08] rounded-3xl p-1 shadow-2xl">
               <div className="bg-[#0F0F15] rounded-[20px] overflow-hidden">
                 {/* Header */}
                 <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
                   <span className="text-white text-sm font-medium">New lead just filed</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-medium">🔥 Hot Lead — 87</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-medium">🔥 Hot Lead — 94</span>
                 </div>
                 {/* Lead */}
                 <div className="px-5 py-4 space-y-3">
                   <div>
-                    <p className="text-white text-lg font-bold">4711 Harwich St</p>
-                    <p className="text-gray-500 text-sm">Orlando, FL 32808</p>
+                    <p className="text-white text-lg font-bold">4711 N Fern Creek Ave</p>
+                    <p className="text-gray-500 text-sm">Orlando, FL 32814</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="px-2 py-0.5 rounded-md bg-orange-500/10 text-orange-400 text-xs font-medium border border-orange-500/20">Roofing</span>
-                    <span className="text-[#01696F] text-sm font-bold font-mono">$18,500</span>
-                    <span className="text-gray-600 text-xs">Filed 2 hours ago</span>
+                    <span className="text-[#01696F] text-sm font-bold font-mono">$22,500</span>
+                    <span className="flex items-center gap-1 text-gray-600 text-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
+                      2 hours ago
+                    </span>
                   </div>
-                  {/* Owner card */}
-                  <div className="bg-white/[0.04] rounded-xl p-3 space-y-2">
+                  {/* Owner card — blurred until signup */}
+                  <div className="bg-white/[0.04] rounded-xl p-3 space-y-2 relative">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-[#01696F]/20 flex items-center justify-center"><span className="text-sm">👤</span></div>
                       <div>
@@ -127,7 +130,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* How it works — 3 steps */}
+      {/* How it works */}
       <section className="relative z-10 py-20 px-6 border-t border-white/[0.06]">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-center text-2xl sm:text-3xl font-bold mb-3">From permit to phone call in 3 clicks</h2>
@@ -269,10 +272,10 @@ export default async function Home() {
       {/* Final CTA */}
       <section className="relative z-10 py-20 px-6">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Stop driving blind.</h2>
-          <p className="text-gray-400 text-lg mb-8">Every day, permits are filed in your area. Every one is a potential sale. Start finding them.</p>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Your next customer already filed a permit.</h2>
+          <p className="text-gray-400 text-lg mb-8">Find them before your competitor does.</p>
           <Link href="/signup" className="inline-block px-8 py-4 bg-[#01696F] hover:bg-[#0C4E54] text-white font-semibold rounded-xl transition-colors text-lg shadow-lg shadow-[#01696F]/20">
-            Start Free — 30 Seconds to Sign Up
+            Start Free — No Credit Card
           </Link>
           <p className="text-gray-600 text-xs mt-4">No credit card required. Cancel anytime.</p>
         </div>
