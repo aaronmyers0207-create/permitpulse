@@ -19,7 +19,8 @@ export default async function DashboardPage() {
   }
 
   // If onboarding isn't complete, redirect (skip for admin)
-  const needsOnboarding = !profile.company_name || !profile.industry;
+  // Only check industry + states — company_name is no longer required
+  const needsOnboarding = !profile.industry || !profile.states || (profile.states as string[]).length === 0;
   if (needsOnboarding && profile.tier !== "admin") {
     redirect("/onboarding/company");
   }

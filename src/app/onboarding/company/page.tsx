@@ -52,14 +52,14 @@ export default function OnboardingPage() {
           selectedStates.includes(c.state)
         ).map((c) => c.city);
 
-        await supabase.from("profiles").upsert({
+        const { error: upsertError } = await supabase.from("profiles").upsert({
           id: user.id,
           email: user.email,
           industry: selectedIndustry,
           states: selectedStates,
-          // Store auto-selected cities as well if the schema supports it
-          cities: autoSelectedCities,
+          company_name: "", // satisfy legacy onboarding check
         });
+        if (upsertError) throw upsertError;
 
         router.push("/dashboard");
       }
