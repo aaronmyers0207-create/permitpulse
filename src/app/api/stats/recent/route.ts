@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("permits")
     .select("id", { count: "exact", head: true })
-    .gt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+    .gt("filed_date", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
   if (stateParam) {
     query = query.eq("state", stateParam.toUpperCase());
@@ -44,26 +44,40 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("[/api/stats/recent] Supabase error:", error.message);
-    // Return a plausible fallback so the UI doesn't break
     return NextResponse.json(
-      {
-        count: 47,
-        state: stateParam || null,
-        hours: 24,
-        fallback: true,
-      },
-      {
-        status: 200,
-        headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" },
-      }
+      { count: 47, state: stateParam || null, hours: 24, fallback: true },
+      { status: 200, headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } }
     );
+  }
+
+  // If 24h count is very low, step up to 7 days to show a meaningful number
+  let finalCount = count ?? 0;
+  let hours = 24;
+  if (finalCount < 5) {
+    let q7 = supabase
+      .from("permits")
+      .select("id", { count: "exact", head: true })
+      .gt("filed_date", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+    if (stateParam) q7 = q7.eq("state", stateParam.toUpperCase());
+    const { count: count7 } = await q7;
+    if ((count7 ?? 0) > finalCount) { finalCount = count7 ?? 0; hours = 168; }
+  }
+  // Still low — step up to 30 days
+  if (finalCount < 5) {
+    let q30 = supabase
+      .from("permits")
+      .select("id", { count: "exact", head: true })
+      .gt("filed_date", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+    if (stateParam) q30 = q30.eq("state", stateParam.toUpperCase());
+    const { count: count30 } = await q30;
+    if ((count30 ?? 0) > finalCount) { finalCount = count30 ?? 0; hours = 720; }
   }
 
   return NextResponse.json(
     {
-      count: count ?? 0,
+      count: finalCount,
       state: stateParam || null,
-      hours: 24,
+      hours,
     },
     {
       status: 200,

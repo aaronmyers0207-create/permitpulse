@@ -52,6 +52,7 @@ function useCountUp(target: number, duration: number = 1200): number {
 export default function LivePermitCounter() {
   const [targetCount, setTargetCount] = useState(0);
   const [state, setState] = useState<string | null>(null);
+  const [hours, setHours] = useState(24);
   const [loaded, setLoaded] = useState(false);
   const displayCount = useCountUp(targetCount, 1400);
 
@@ -68,6 +69,7 @@ export default function LivePermitCounter() {
         if (!cancelled) {
           setTargetCount(data.count ?? FALLBACK_COUNT);
           setState(data.state);
+          setHours(data.hours ?? 24);
           setLoaded(true);
         }
       } catch {
@@ -85,21 +87,16 @@ export default function LivePermitCounter() {
   }, []);
 
   const stateLabel = state ? ` in ${state}` : "";
+  const timeLabel = hours <= 24 ? "last 24 hours" : hours <= 168 ? "last 7 days" : "last 30 days";
 
   return (
     <div className="flex items-center justify-center gap-2">
-      {/* Pulsing green dot */}
       <span className="relative flex h-2.5 w-2.5 shrink-0">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
       </span>
-
       <span className="text-gray-400 text-sm">
-        <span
-          className={`text-white font-medium tabular-nums transition-opacity duration-300 ${
-            loaded ? "opacity-100" : "opacity-0"
-          }`}
-        >
+        <span className={`text-white font-medium tabular-nums transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}>
           {displayCount} new permit{displayCount !== 1 ? "s" : ""}
         </span>
         {!loaded && (
@@ -108,7 +105,7 @@ export default function LivePermitCounter() {
             {" "}new permits
           </span>
         )}{" "}
-        filed{stateLabel} in the last 24 hours
+        filed{stateLabel} in the {timeLabel}
       </span>
     </div>
   );
