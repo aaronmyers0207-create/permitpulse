@@ -26,16 +26,26 @@ export async function GET() {
     .select("*")
     .order("completed_at", { ascending: false });
 
-  // Get permit counts per source
-  const { data: counts } = await admin
-    .from("permits")
-    .select("source_id");
+  // Get permit counts per source using SQL aggregation (not row scan)
+  const { data: countRows } = await admin
+    .rpc("get_permit_counts_by_source") as any;
 
-  // Count permits per source_id
-  const countMap: Record<string, number> = {};
-  if (counts) {
-    for (const row of counts) {
-      countMap[row.source_id] = (countMap[row.source_id] || 0) + 1;
+  // Fallback: direct SQL if RPC not available
+  let countMap: Record<string, number> = {};
+  if (countRows && Array.isArray(countRows)) {
+    for (const row of countRows) {
+      countMap[row.source_id] = Number(row.count);
+    }
+  } else {
+    // Direct query fallback
+    const { data: rawCounts } = await admin
+      .from("permits")
+      .select("source_id, id", { count: "exact", head: false })
+      .limit(100000);
+    if (rawCounts) {
+      for (const row of rawCounts) {
+        countMap[row.source_id] = (countMap[row.source_id] || 0) + 1;
+      }
     }
   }
 
