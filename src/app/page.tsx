@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import LandingHeroForm from "@/components/LandingHeroForm";
+import LivePermitCounter from "@/components/LivePermitCounter";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -48,15 +49,9 @@ export default async function Home() {
       <section className="relative z-10 px-6 pt-10 pb-20">
         <div className="max-w-5xl mx-auto">
 
-          {/* FOMO ticker */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-            </span>
-            <span className="text-gray-400 text-sm">
-              <span className="text-white font-medium">47 new permits</span> filed in Florida in the last 24 hours
-            </span>
+          {/* FOMO ticker — real permit count from /api/stats/recent */}
+          <div className="mb-8">
+            <LivePermitCounter />
           </div>
 
           <div className="text-center max-w-3xl mx-auto mb-10">

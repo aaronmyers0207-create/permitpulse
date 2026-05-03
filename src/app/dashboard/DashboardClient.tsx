@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import GuidedTour from "@/components/GuidedTour";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { INDUSTRY_MAP, COVERED_STATES } from "@/lib/industries";
@@ -144,6 +145,7 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
 
   return (
     <div className="min-h-screen" onClick={() => setStatusDropdown(null)}>
+      <GuidedTour />
       {/* Nav */}
       <nav className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-black/[0.06] px-6 py-0">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-14">
@@ -282,7 +284,7 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
           <div className="text-center py-20"><div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4"><span className="text-2xl">📋</span></div><h3 className="text-[#1D1D1F] text-lg font-semibold mb-1">No leads found</h3><p className="text-[#6E6E73] text-sm">{total===0?<>Sync data from <a href="/admin" className="text-[#01696F] underline">Admin</a>.</>:"Adjust your filters."}</p></div>
         ) : (
           <>
-            <div className="grid gap-2.5">
+            <div className="grid gap-2.5" data-tour="leads-list">
               {filteredPermits.map((p: any) => {
                 const sc: LeadScore = p._score;
                 const c = CAT[p.category] || CAT.general;
@@ -293,12 +295,13 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
 
                 return (
                   <div key={p.id} onClick={() => { setSelectedPermit(p); setDrawerNotes(viewsMap[p.id]?.notes || ""); }}
+                    {...(filteredPermits.indexOf(p) === 0 ? { "data-tour": "lead-card" } : {})}
                     className={`bg-white/70 backdrop-blur-xl border rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer group ${
                       sc.temp === "hot" ? "border-[#01696F]/25 ring-1 ring-[#01696F]/5" : "border-black/[0.04]"
                     }`}>
                     <div className="px-4 py-3.5 flex items-start gap-3">
                       {/* Score indicator */}
-                      <div className="flex flex-col items-center gap-1 mt-1">
+                      <div className="flex flex-col items-center gap-1 mt-1" {...(filteredPermits.indexOf(p) === 0 ? { "data-tour": "score-badge" } : {})}>
                         <div className={`w-3 h-3 rounded-full ${sc.temp==="hot"?"bg-red-400 animate-pulse":sc.temp==="warm"?"bg-green-400":"bg-gray-300"}`}/>
                         <span className="text-[10px] font-mono text-[#A1A1A6]">{sc.score}</span>
                       </div>
@@ -313,7 +316,7 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                           <div className={`w-2 h-2 rounded-full ${freshnessColor(p.filed_date)}`}/>
                           <span className="text-[11px] text-[#A1A1A6]">{daysAgo(p.filed_date)}</span>
                           {/* Status pill */}
-                          <div className="relative" onClick={(e) => { e.stopPropagation(); setStatusDropdown(statusDropdown === p.id ? null : p.id); }}>
+                          <div className="relative" {...(filteredPermits.indexOf(p) === 0 ? { "data-tour": "status-buttons" } : {})} onClick={(e) => { e.stopPropagation(); setStatusDropdown(statusDropdown === p.id ? null : p.id); }}>
                             <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium border cursor-pointer hover:opacity-80 ${st.color}`}>{st.label}</span>
                             {statusDropdown === p.id && (
                               <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[130px]">
@@ -364,7 +367,7 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
                       </div>
 
                       {/* Star + arrow */}
-                      <div className="flex items-center gap-1 mt-1">
+                      <div className="flex items-center gap-1 mt-1" {...(filteredPermits.indexOf(p) === 0 ? { "data-tour": "skip-trace-btn" } : {})}>
                         <button onClick={(e) => toggleStar(p.id, e)} className={`text-base hover:scale-110 transition-transform ${starred?"":"opacity-20 group-hover:opacity-50"}`}>{starred?"⭐":"☆"}</button>
                         <svg className="w-4 h-4 text-[#A1A1A6] opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
                       </div>
