@@ -128,7 +128,8 @@ function getTooltipPosition(
   };
 }
 
-export default function GuidedTour() {
+export default function GuidedTour({ userId, showButton = true }: { userId?: string; showButton?: boolean }) {
+  const storageKey = userId ? `permit_tracer_tour_${userId}` : TOUR_STORAGE_KEY;
   const [active, setActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [spotlightRect, setSpotlightRect] = useState<TooltipRect | null>(null);
@@ -146,7 +147,7 @@ export default function GuidedTour() {
     setTimeout(() => {
       setActive(false);
       try {
-        localStorage.setItem(TOUR_STORAGE_KEY, "true");
+        localStorage.setItem(storageKey, "true");
       } catch {}
     }, 200);
   }, []);
@@ -213,7 +214,7 @@ export default function GuidedTour() {
   // Initialize tour
   useEffect(() => {
     try {
-      const seen = localStorage.getItem(TOUR_STORAGE_KEY);
+      const seen = localStorage.getItem(storageKey);
       if (seen) return;
     } catch {}
 
@@ -266,7 +267,21 @@ export default function GuidedTour() {
     }
   };
 
-  if (!active) return null;
+  const startTour = () => {
+    try { localStorage.removeItem(storageKey); } catch {}
+    setStepIndex(0);
+    setActive(true);
+  };
+
+  if (!active) return showButton ? (
+    <button
+      onClick={startTour}
+      title="Take a tour"
+      className="fixed bottom-6 right-6 z-40 w-10 h-10 rounded-full bg-[#01696F] text-white text-sm font-bold shadow-lg hover:bg-[#0C4E54] transition-colors flex items-center justify-center"
+    >
+      ?
+    </button>
+  ) : null;
 
   const step = TOUR_STEPS[stepIndex];
   const totalSteps = TOUR_STEPS.length;

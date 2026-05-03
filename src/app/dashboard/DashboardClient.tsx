@@ -145,7 +145,7 @@ export default function DashboardClient({ profile, initialPermits, totalCount, p
 
   return (
     <div className="min-h-screen" onClick={() => setStatusDropdown(null)}>
-      <GuidedTour />
+      <GuidedTour userId={profile?.id} />
       {/* Nav */}
       <nav className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-black/[0.06] px-6 py-0">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-14">
